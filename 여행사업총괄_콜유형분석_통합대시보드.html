@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>여행사업총괄 25년 IN&OUT 콜 유형 분석</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Apple SD Gothic Neo','Malgun Gothic',-apple-system,sans-serif;background:#f4f4f1;color:#1a1a18;font-size:14px;line-height:1.6}
+
+/* ─── SIDEBAR ─── */
+.layout{display:flex;min-height:100vh}
+.sidebar{width:220px;flex-shrink:0;background:#1c1c1a;color:#d0d0c8;position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column}
+.sidebar-logo{padding:20px 18px 14px;border-bottom:1px solid #333}
+.sidebar-logo h1{font-size:13px;font-weight:700;color:#fff;line-height:1.4}
+.sidebar-logo p{font-size:10px;color:#888;margin-top:3px}
+.nav-section{padding:12px 0 4px 18px;font-size:10px;font-weight:700;color:#555;letter-spacing:.08em;text-transform:uppercase}
+.nav-item{display:block;padding:7px 18px;font-size:12px;color:#aaa;cursor:pointer;border-left:2px solid transparent;transition:all .15s;text-decoration:none}
+.nav-item:hover{color:#fff;background:#2a2a28}
+.nav-item.active{color:#fff;background:#2a2a28;border-left-color:#4a9eff}
+.nav-sub{padding-left:12px;font-size:11px;color:#777}
+.nav-sub.active{color:#9bc8ff}
+
+/* ─── MAIN ─── */
+.main{flex:1;overflow:hidden}
+.topbar{background:#fff;border-bottom:1px solid #e0e0db;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar-title{font-size:16px;font-weight:700;color:#1a1a18}
+.topbar-sub{font-size:11px;color:#999;margin-top:1px}
+.content{padding:24px 28px 60px;max-width:1200px}
+
+/* ─── PAGE ─── */
+.page{display:none}
+.page.active{display:block}
+.page-title{font-size:18px;font-weight:700;margin-bottom:6px}
+.page-sub{font-size:12px;color:#888;margin-bottom:20px}
+
+/* ─── METRICS ─── */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.metric-card{background:#fff;border:1px solid #e4e4df;border-radius:10px;padding:14px 16px;border-top:2px solid #2457a4}
+.metric-card .lbl{font-size:10px;font-weight:700;color:#999;letter-spacing:.05em;text-transform:uppercase;margin-bottom:5px}
+.metric-card .val{font-size:24px;font-weight:700;color:#1a1a18;line-height:1}
+.metric-card .sub{font-size:10px;color:#aaa;margin-top:3px}
+
+/* ─── CARD ─── */
+.card{background:#fff;border:1px solid #e4e4df;border-radius:10px;overflow:hidden;margin-bottom:16px}
+.card-head{padding:14px 18px;border-bottom:1px solid #f0f0eb;display:flex;align-items:center;justify-content:space-between}
+.card-head-title{font-size:13px;font-weight:700;color:#444}
+.card-body{padding:16px 18px}
+
+/* ─── TABS ─── */
+.tabs{display:flex;border-bottom:1px solid #e4e4df;background:#fafafa;padding:0 18px}
+.tab{padding:10px 16px;font-size:12px;font-weight:600;cursor:pointer;color:#999;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
+.tab.active{color:#2457a4;border-bottom-color:#2457a4}
+.tab:hover{color:#333}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ─── TABLE ─── */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead tr{background:#f7f7f4}
+th{padding:8px 10px;text-align:left;font-weight:700;font-size:10px;color:#888;letter-spacing:.05em;text-transform:uppercase;border-bottom:1px solid #e8e8e3;white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid #f0f0eb;vertical-align:middle;color:#333}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#fafaf8}
+
+/* ─── BADGES ─── */
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;white-space:nowrap}
+.b-auto{background:#ddeeff;color:#1a5fa8}
+.b-tmpl{background:#d8f5e8;color:#136b3a}
+.b-ops{background:#eeecea;color:#5a5a55}
+.b-review{background:#fff3d8;color:#7a4f00}
+.b-h{background:#ffe5e5;color:#a02020}
+.b-m{background:#fff3d8;color:#7a4f00}
+.b-l{background:#d8f5e8;color:#136b3a}
+
+/* ─── BARS ─── */
+.bars-wrap{padding:14px 18px}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.bar-lbl{font-size:11px;color:#666;width:100px;flex-shrink:0;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-tracks{flex:1;display:flex;flex-direction:column;gap:2px}
+.bar-track{height:8px;background:#f0f0eb;border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px}
+.bar-val{font-size:10px;color:#aaa;width:70px;text-align:right;flex-shrink:0}
+.bar-legend{display:flex;gap:12px;font-size:11px;color:#888;margin-bottom:10px;padding:0 18px}
+.bar-legend span{display:flex;align-items:center;gap:4px}
+.leg-dot{width:8px;height:8px;border-radius:2px;display:inline-block}
+
+/* ─── BUTTONS ─── */
+.btn{display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .12s}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:#2457a4;color:#fff}
+.btn-primary:hover{background:#1d4890}
+.btn-ghost{background:#f4f4f1;color:#555;border:1px solid #ddd}
+.btn-ghost:hover{background:#e8e8e3}
+.btn-danger{background:#ffe8e8;color:#b52020;border:1px solid #f5c8c8}
+.btn-danger:hover{background:#fdd}
+.btn-icon{width:26px;height:26px;padding:0;justify-content:center;font-size:13px;border-radius:5px}
+
+/* ─── CHARTS ─── */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.chart-leg{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;font-size:10px;color:#666;justify-content:center}
+.chart-leg span{display:flex;align-items:center;gap:3px}
+
+/* ─── MODAL ─── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;padding:16px}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.18);width:100%;max-width:520px;overflow:hidden}
+.modal-hd{padding:16px 20px;border-bottom:1px solid #e8e8e3;display:flex;align-items:center;justify-content:space-between}
+.modal-hd h3{font-size:14px;font-weight:700}
+.modal-bd{padding:18px 20px;display:flex;flex-direction:column;gap:13px;max-height:60vh;overflow-y:auto}
+.modal-ft{padding:12px 20px;border-top:1px solid #e8e8e3;display:flex;justify-content:flex-end;gap:8px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg label{font-size:11px;font-weight:700;color:#666}
+.fg input,.fg select,.fg textarea{padding:7px 10px;border:1px solid #d8d8d3;border-radius:7px;font-size:12px;color:#1a1a18;background:#fff;font-family:inherit;outline:none;transition:border .15s}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:#2457a4;box-shadow:0 0 0 2px rgba(36,87,164,.1)}
+.fg textarea{resize:vertical;min-height:56px}
+
+/* ─── DEL CONFIRM ─── */
+.del-box{background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.16);padding:22px 24px;max-width:340px;width:90%;text-align:center}
+.del-box h3{font-size:14px;font-weight:700;margin-bottom:7px}
+.del-box p{font-size:12px;color:#666;margin-bottom:16px}
+.del-btns{display:flex;gap:8px;justify-content:center}
+
+/* ─── TOAST ─── */
+.toast{position:fixed;bottom:24px;right:24px;background:#1a1a18;color:#fff;padding:9px 16px;border-radius:7px;font-size:12px;font-weight:600;z-index:999;opacity:0;transform:translateY(6px);transition:all .2s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* ─── IMPROVE LIST ─── */
+.imp-list{list-style:none}
+.imp-item{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid #f0f0eb;font-size:12px}
+.imp-item:last-child{border-bottom:none}
+.imp-icon{font-size:15px;flex-shrink:0;margin-top:1px}
+
+/* ─── SECTION HEADER ─── */
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.sec-title{font-size:11px;font-weight:700;color:#888;letter-spacing:.06em;text-transform:uppercase}
+
+@media(max-width:900px){
+  .sidebar{display:none}
+  .metrics{grid-template-columns:1fr 1fr}
+  .charts-row{grid-template-columns:1fr}
+  .form-row{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <h1>여행사업총괄<br>콜 유형 분석</h1>
+    <p>2025년 IN&OUT 분석</p>
+  </div>
+  <div style="padding-bottom:20px">
+    <div class="nav-section">전체 요약</div>
+    <a class="nav-item active" onclick="goPage('pg-pkg-sum')">📦 PKG 전체요약</a>
+    <a class="nav-item" onclick="goPage('pg-fit-sum')">✈️ FIT 전체요약</a>
+    <div class="nav-section">PKG 부문별</div>
+    <a class="nav-item" onclick="goPage('pg-유럽부문')">🇪🇺 유럽부문</a>
+    <a class="nav-item" onclick="goPage('pg-일본부문')">🇯🇵 일본부문</a>
+    <a class="nav-item" onclick="goPage('pg-동남아부문')">🌴 동남아부문</a>
+    <a class="nav-item" onclick="goPage('pg-중국부문')">🇨🇳 중국부문</a>
+    <a class="nav-item" onclick="goPage('pg-미주남태부문')">🌎 미주남태부문</a>
+    <a class="nav-item" onclick="goPage('pg-크루즈팀')">🚢 크루즈팀</a>
+    <div class="nav-section">FIT 상세</div>
+    <a class="nav-item" onclick="goPage('pg-fit-detail')">🗂️ FIT 상세 목록</a>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title" id="topbarTitle">PKG 전체요약</div>
+      <div class="topbar-sub">CS 상담 업무의 자동화 및 효율화를 위한 기초 자료</div>
+    </div>
+  </div>
+  <div class="content" id="mainContent"></div>
+</div>
+
+</div>
+
+<!-- Edit Modal -->
+<div class="overlay" id="editOverlay">
+  <div class="modal">
+    <div class="modal-hd">
+      <h3 id="editTitle">항목 추가</h3>
+      <button class="btn btn-ghost btn-icon" onclick="closeEdit()">✕</button>
+    </div>
+    <div class="modal-bd">
+      <input type="hidden" id="eId">
+      <input type="hidden" id="ePageKey">
+      <input type="hidden" id="eCallType">
+      <div class="fg"><label>콜 유형 *</label><input id="eType" placeholder="예: 결제 안내"></div>
+      <div class="fg"><label>주요 내용 *</label><input id="eContent" placeholder="예: 예약금/잔금/재결제"></div>
+      <div class="form-row">
+        <div class="fg"><label>일 평균 발생빈도 (건)</label><input type="number" id="eFreq" min="1" placeholder="15"></div>
+        <div class="fg"><label>소요시간 (분/건)</label><input type="number" id="eTime" min="1" placeholder="5"></div>
+      </div>
+      <div class="form-row">
+        <div class="fg"><label>처리 난이도</label><select id="eDiff"><option>상</option><option selected>중</option><option>하</option></select></div>
+        <div class="fg"><label>자동화 검토</label>
+          <select id="eAuto">
+            <option>자동화 검토</option><option>가능여부 검토</option>
+            <option>템플릿 대체화</option><option>운영 처리</option>
+            <option>템플릿 대체</option><option>Y</option><option>N</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label>상세 내용</label><textarea id="eDetail"></textarea></div>
+      <div class="fg"><label>실무 의견/비고</label><textarea id="eNote"></textarea></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeEdit()">취소</button>
+      <button class="btn btn-primary" onclick="saveEdit()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Improve Modal -->
+<div class="overlay" id="impOverlay">
+  <div class="modal">
+    <div class="modal-hd">
+      <h3 id="impTitle">개선방안 추가</h3>
+      <button class="btn btn-ghost btn-icon" onclick="closeImp()">✕</button>
+    </div>
+    <div class="modal-bd">
+      <input type="hidden" id="impId">
+      <input type="hidden" id="impPageKey">
+      <div class="fg"><label>항목명 *</label><input id="impName"></div>
+      <div class="fg"><label>내용 *</label><textarea id="impContent" style="min-height:72px"></textarea></div>
+      <div class="fg"><label>아이콘 (이모지)</label><input id="impIcon" maxlength="4" placeholder="📌"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeImp()">취소</button>
+      <button class="btn btn-primary" onclick="saveImp()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm -->
+<div class="overlay" id="delOverlay">
+  <div class="del-box">
+    <h3>항목을 삭제할까요?</h3>
+    <p id="delDesc">삭제하면 되돌릴 수 없습니다.</p>
+    <div class="del-btns">
+      <button class="btn btn-ghost" onclick="closeDel()">취소</button>
+      <button class="btn btn-danger" onclick="confirmDel()">삭제</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────────────
+const RAW = {"pkg_summary": {"out": [{"id": 2, "type": "예약 컨택", "content": "웹예약 또는 홈쇼핑 해피콜", "freq": 20, "time": 10, "diff": "중", "auto": "자동화 검토", "detail": "예약 진행 여부 (출발일 결정), 예약인원, 일정표 발송, 포함&amp;불포함  내역등 상품 설명", "note": "- 기본안내(예약금결제시한/취소규정 등) 이외의 추가문의사항 대응↑ 추가문의 : 룸타입(TRP/SGL), 최소출발인원, 현지조인,항공좌석지정 등"}, {"id": 3, "type": "결제 안내", "content": "예약금/잔금/재결제", "freq": 15, "time": 2, "diff": "중", "auto": "자동화 검토", "detail": "예약금 결제 안내 (즉시결제 자동화 변경예정) , 잔금 결제 안내 (문자 &amp; 유선) 네이버 결제 안내/재결제 안내", "note": "개별 결제 요청, 카드사 변경 재결제 이슈  잔금 결제 지연 시 OUT콜 진행, 장기간 지연 시 선납금액 위약금 구분 후 취소"}, {"id": 4, "type": "규정 안내", "content": "예약 규정(여행약관 및 계약서)", "freq": 6, "time": 3, "diff": "중", "auto": "자동화 검토", "detail": "예약확정시 진행 내역에 대한 추가(1-1, 2차) 상세 CS진행 (상품안내/취소규정/특별약관안내 등)", "note": "예약 컨택 과정에서 규정안내 일괄 진행 출발확정이 아닌 경우, 위약금 없이 취소 가능에 대한 추가안내"}, {"id": 5, "type": "여권정보 등록", "content": "여권사본(OCR등록) 안내", "freq": 6, "time": 3, "diff": "하", "auto": "자동화 검토", "detail": "여권 정보 제공 안내 (문자 &amp; 유선)", "note": "- 여권정보 전달 반복지연 시  OUT콜 진행  OCR 전송 어려운 고객 설명및MO대체"}, {"id": 6, "type": "취소 안내", "content": "취소/환불", "freq": 4, "time": 8, "diff": "중", "auto": "자동화 검토", "detail": "예약 변경 안내 /환불 규정 및 위약금(환불수수료) 안내", "note": "- 취소문의 접수된 고객 대상으로 OUT콜 진행 - 예약금 환급 불가로만 인지하는 고객 ↑, 이에 위약금 발생안내 시 항의↑"}, {"id": 7, "type": "변경 안내", "content": "상품/행사/인원", "freq": 3, "time": 6, "diff": "중", "auto": "자동화 검토", "detail": "예약 변경 안내 / 항공 스케줄(천재지변/정비 포함)변경", "note": "항공 및 관광일정 변경으로 인해 안내가 필요한 경우, OUT콜 진행 고객요청에 의한 날짜/상품/인원 변경 의 경우"}, {"id": 8, "type": "발권 안내", "content": "발권", "freq": 3, "time": 5, "diff": "중", "auto": "자동화 검토", "detail": "항공 발권 후 취소시 항공사 환불 수수료 안내 (선발권 안내포함)", "note": "선발권 진행 문자 발송  발권 후 취소 시 수수료발생 안내 진행"}, {"id": 9, "type": "출발  안내", "content": "준비물 및 미팅 시간 장소", "freq": 3, "time": 3, "diff": "중", "auto": "자동화 검토", "detail": "준비물(여권소지 및 환전) 및 미팅 시간 장소 재안내 (문자 &amp; 유선)", "note": "인솔자 미동행 행사 대상,  평균 문자안내만 진행 최종안내문자 발송/ 해피콜 가이드 진행"}, {"id": 10, "type": "VOC  처리", "content": "사후 관리", "freq": 1, "time": 10, "diff": "상", "auto": "운영처리", "detail": "고객 만족도 및 클레임 대응", "note": "클레임 발생 시 1차대응 및 요구사항 정리할 수 있는 절차가 필요합니다. *고객만족팀 등 운영 제안"}, {"id": 11, "type": "기타", "content": "그외기타", "freq": 1, "time": 3, "diff": "중", "auto": "자동화 검토", "detail": "제휴사예약 마이페이지 연동 ((예약상태 및 여행 후기 작성 관련),", "note": "가입이 여러번 되어있는 경우 서로 상담하기 어려움  제휴사 예약 고객 연동 요청 불가 안내"}], "in": [{"id": 12, "type": "결제 관련", "content": "결제수단/변경, 현금영수증", "freq": 15, "time": 5, "diff": "중", "auto": "가능여부 검토", "detail": "무이자할부/ 카드 결제 수단 변경,결제혼용문의, 현금영수증 문의,잔금결제 시점 문의", "note": "*분할결제 개발 검토"}, {"id": 13, "type": "상품관련", "content": "특전/일정/기타 문의", "freq": 10, "time": 10, "diff": "하", "auto": "템플릿 대체화", "detail": "포함내역/특전내역/ 일정관련 문의 상품 및 행사별로 가격차이 문의, 예약후 해당행사 가격변동 문의, 연합상품 문의", "note": "홈페이지 및 일정표에 안내가 되어있으나, 전화로 문의 유입이 많음"}, {"id": 14, "type": "출발 확정", "content": "최소 출발인원", "freq": 10, "time": 3, "diff": "중", "auto": "가능여부 검토", "detail": "행사 출발확정 문의 / 최소 출발인원이 안되는 경우에 대한 고객 문의", "note": "- 대체일정안내 또는 예약금 환불안내 진행"}, {"id": 15, "type": "호텔 관련", "content": "룸타입/호텔명 문의", "freq": 8, "time": 4, "diff": "하", "auto": "가능여부 검토", "detail": "확정 호텔 문의, 독실사용료, 3인1실 관련 문의", "note": "3인1실 시 상품가할인요구 및 독실사용료 추가결제에 대한 불만↑"}, {"id": 16, "type": "선택관광", "content": "선택관광 문의", "freq": 8, "time": 10, "diff": "중", "auto": "템플릿 대체화", "detail": "선택관광(옵션 : Option)관련 문의", "note": "- 선택관광 현지화폐 환전준비에 대한 불만↑"}, {"id": 17, "type": "예약 관련", "content": "예약 인원, 예약 준비", "freq": 5, "time": 5, "diff": "하", "auto": "운영처리", "detail": "패키지 여행 예약시, 기본적으로 필요사항, 인원 추가/감소 관련 문의", "note": "반복적인 문의가 다수"}, {"id": 18, "type": "취소수수료", "content": "취소/환불 규정", "freq": 4, "time": 5, "diff": "중", "auto": "템플릿 대체화", "detail": "예약 후 취소시 환불 수수료 관련 문의", "note": "환불 규정 및 위약금 환불수수료 관련 문의 - 환불불가 안내 시 협박성 항의↑(ex. 소보원 접수, 커뮤니티 작성하겠다 등)"}, {"id": 19, "type": "항공권 관련", "content": "상품/행사 변경", "freq": 4, "time": 8, "diff": "중", "auto": "템플릿 대체화", "detail": "마일리지 예약, 좌석업그레이드, 좌석지정 및 기내식 , 수화물 , 체크인 , 이티켓 관련 문의", "note": "어르신들은 여행사에서 해주길 바라는 경우 많음"}, {"id": 20, "type": "예약 변경", "content": "상품/행사 변경", "freq": 3, "time": 5, "diff": "중", "auto": "운영처리", "detail": "예약 일정 변경 및 상품변경, 동행자 인원 변경이슈", "note": "1.0"}, {"id": 21, "type": "소아/유아 문의", "content": "소아 동반시 문의", "freq": 3, "time": 3, "diff": "하", "auto": "템플릿 대체화", "detail": "소아 요금 관련문의 / 소아&amp;유아 동반관련 문의", "note": "소아/성인 요금 동일한 경우 이해 못함.  소아를 1명의 사람이라고 생각안함"}, {"id": 22, "type": "여행준비", "content": "준비물/면세점", "freq": 2, "time": 3, "diff": "하", "auto": "템플릿 대체화", "detail": "면세점 이용방법/ 항공 출발편수 문의등 준비물 및 환전 및 미팅 시간 장소 문의,보험문의", "note": "템플릿화 해서 출발전 안내 발송 -> 그럼에도 유입되는 부분은 별도 CS"}]}, "fit_summary": {"out": [{"id": 23, "type": "고객예약 컨택", "content": "웹예약 또는 채널링 유입", "freq": 15, "time": 5, "diff": "중", "auto": "자동화 검토", "detail": "예약 진행 여부 , 예약 가능 여부 및 확정 안내", "note": "- 기본안내 좌석/호텔 확정 여부 ,  결제시한 및  취소규정  안내   이외의 고객 추가 문의사항 대응/ 예약 불가시 설명, 추가 시간소모"}, {"id": 24, "type": "결제 안내", "content": "예약금/잔금/재결제", "freq": 10, "time": 3, "diff": "중", "auto": "자동화 검토", "detail": "전액 결제 안내  및   채널링 시 네이버 결제 안내 (문자 &amp; 유선)", "note": "개별 결제 요청, 카드사 변경 재결제 이슈  결제 지연 시 OUT콜 진행-> 결제 확인 요청 , 지연 시  예약 취소통보"}, {"id": 25, "type": "취소 안내", "content": "취소/환불", "freq": 8, "time": 5, "diff": "중", "auto": "자동화 검토", "detail": "예약 변경 안내 /환불 규정 및 위약금(환불수수료) 안내", "note": "- 취소문의 접수된 고객 대상으로 OUT콜 진행 -항공&amp;호텔 불가시 제휴 채널링 결제인입 취소/환불 처리 및 안내"}, {"id": 26, "type": "발권 안내", "content": "발권", "freq": 5, "time": 5, "diff": "중", "auto": "자동화 검토", "detail": "항공 발권 후 취소시 항공사 환불 수수료 안내 (선발권 안내포함)", "note": "선발권 및  항공 발권 진행 문자 발송  발권 후 취소 시 수수료발생 안내 진행"}, {"id": 27, "type": "호텔 변경", "content": "호텔 안내", "freq": 4, "time": 5, "diff": "중", "auto": "자동화 검토", "detail": "대체 리조트 안내 및 룸타입 불가시 대체 안내 또는 고객 요청 시 안내", "note": "룸타입 및 리조트 변경 이슈 시,  고객 호텔 관련 변경 아웃콜 예약 상품과 동일 룸타입 진행 불가시 안내"}, {"id": 28, "type": "변경 안내", "content": "상품/행사/인원", "freq": 3, "time": 6, "diff": "중", "auto": "자동화 검토", "detail": "예약 변경 안내 / 항공 스케줄(천재지변/정비 포함)변경", "note": "항공 및 관광일정 변경으로 인해 안내가 필요한 경우, OUT콜 진행 고객요청에 의한 날짜/상품/인원 변경 의 경우"}, {"id": 29, "type": "여권정보 등록", "content": "여권사본(OCR등록) 안내", "freq": 2, "time": 3, "diff": "하", "auto": "자동화 검토", "detail": "여권 정보 제공 안내 (문자 &amp; 유선)", "note": "- 여권정보 전달 반복지연 시  OUT콜 진행  OCR 전송 어려운 고객 설명및MO대체"}, {"id": 30, "type": "VOC  처리", "content": "사후 관리", "freq": 1, "time": 10, "diff": "상", "auto": "템플릿 대체화", "detail": "고객 만족도 및 클레임 대응", "note": "현지 픽업 미스, 호텔 및 항공 관련 이슈 발생 시 대응"}], "in": [{"id": 31, "type": "타부서건 유입", "content": "PKG/항공 고객 전화 인입", "freq": 10, "time": 3, "diff": "하", "auto": "가능여부 검토", "detail": "타부서 문의건에 대한 전화 연결 / 불필요한 컨플레인 발생", "note": "호전환 이슈 해결 필요 / 항공팀 문의 대다수/컴플레인 인입 포함  타부서  전화하여 해당부서 전화 연결 요청 및 컴플레인 진행"}, {"id": 32, "type": "항공관련", "content": "항공 관련 문의", "freq": 8, "time": 3, "diff": "중", "auto": "템플릿 대체화", "detail": "항공기종/컨티션, 좌석 업그레이드, 좌석지정 및 기내식 , 수화물 민 온라인 체크인 , 이티켓 관련 문의", "note": "상품내에 기본 사항은  안내가 되어있으나, 세부 디테일 사항에 대한 항공 문의 유입"}, {"id": 33, "type": "호텔 관련", "content": "룸타입 및 투숙인원", "freq": 7, "time": 3, "diff": "중", "auto": "템플릿 대체화", "detail": "독실사용료, 3인1실 및 엑스트라베드, 리조트별 풀빌라 최대 인원, 소아 동반 투숙 관련 문의", "note": "3인1실 시 상품가, 1인1실 싱글챠지에 대한 설명 요청 소아 동반 투숙시 엑스트라베드 및 풀빌라 룸타입별 인원수 문의"}, {"id": 34, "type": "예약 확정", "content": "예약 확정 여부", "freq": 6, "time": 5, "diff": "중", "auto": "템플릿 대체화", "detail": "접수 후 고객이 직접 예약 확정 가능 여부에 대한 인입 콜", "note": "항공&amp;호텔 확정전 고객이 예약과 동시에 가능한지 인입 케이스"}, {"id": 35, "type": "예약 취소", "content": "예약취소/변경", "freq": 6, "time": 3, "diff": "중", "auto": "가능여부 검토", "detail": "예약 변경 안내 /환불 규정 및 위약금(환불수수료) 안내", "note": "환불 규정 및 위약금 환불수수료 관련 문의 확정 후 날짜 변경문의"}, {"id": 36, "type": "발송문의", "content": "이티켓/바우처 발송문의", "freq": 6, "time": 3, "diff": "중", "auto": "가능여부 검토", "detail": "항공권 이티켓 및 바우처 발송이 언제쯤 되는지 문의", "note": "상품내에 기본 사항은  안내가 되어있으나,  비엣젯(출발5일전 그룹케이스의 이티켓 수신 문의가 많음)"}, {"id": 37, "type": "결제 관련", "content": "결제수단/변경, 현금영수증", "freq": 5, "time": 3, "diff": "하", "auto": "운영처리", "detail": "무이자할부/ 카드 결제 수단 변경,결제혼용문의, 현금영수증 문의,잔금결제 시점 문의", "note": "재결재 관련  문의 유입 및 취소 후 재예약 문의 가 많음"}, {"id": 38, "type": "여행 준비", "content": "여행 출발전 문의", "freq": 5, "time": 2, "diff": "하", "auto": "가능여부 검토", "detail": "준비물 및 환전 및 , 보험관련 문의,  체크인 카운터 및 호텔 이동 방법 문의", "note": "환불 규정 및 위약금 환불수수료 관련 문의"}, {"id": 39, "type": "투어 관련", "content": "현지 투어/티켓", "freq": 3, "time": 3, "diff": "하", "auto": "운영처리", "detail": "현지 일일투어 및 부가 서비스 티켓등을 구매 할 수 있는지 문의", "note": "현지 투어나, 티켓을 같이 구매하면 저렴한지요? 식의 추가 문의가 있음"}, {"id": 40, "type": "VOC 인입", "content": "항공/호텔/기타", "freq": 2, "time": 10, "diff": "상", "auto": "운영처리", "detail": "연착/지연/결항 이슈 /수하물 훼손 호텔 직원 실수, 객실 변경, 서비스 부족 등에 인한 현지에서 바로 컴플레인 진행", "note": "항공&amp;호텔에 대한 문제 발생 시 여행사로 클레임 진행"}]}, "sections": {"유럽부문": {"out": [{"id": 41, "type": "고객예약 컨택", "content": "웹예약 또는 홈쇼핑 해피콜", "freq": 20, "time": 15, "diff": "중", "auto": "N", "detail": "예약 진행 여부 (출발일 결정), 예약인원, 구성원 확인, 일정표 재발송", "note": "- 기본안내(예약금결제시한/취소규정 등) 이외의 추가문의사항 대응↑ 추가문의사항 : 룸타입(TRP/SGL), 최소출발인원, 현지조인,항공좌석지정 등"}, {"id": 42, "type": "환불 문의", "content": "확정 안내", "freq": 5, "time": 3, "diff": "중", "auto": "가능여부 검토", "detail": "패키지 확정여부(최소출발인원등) 확인, 항공 및 휴양지 리조트 가능여부 재확인", "note": "- 최소출발인원 미충족으로 인한 출발 불가 시 대체일정 1차 안내진행, 대체일정 불가 시 최종환불안내 중 - 사전안내하였음에도 이에 대한 불만인입 시  처리난이도 ↑"}, {"id": 43, "type": "규정 안내", "content": "예약 규정(여행약관 및 계약서)", "freq": 20, "time": 5, "diff": "상", "auto": "템플릿 대체", "detail": "예약확정시 진행 내역에 대한 추가(1-1, 2차) 상세 CS진행 (상품안내/취소규정/특별약관안내 등)", "note": "- 예약 컨택 과정에서 규정안내 일괄 진행 - 출발확정이 아닌 경우, 위약금 없이 취소 가능에 대한 추가안내 진행중, 상기 내용 미안내 시 재인입 및 소비자 입장 부당하다며 부정적 반응 ↑"}, {"id": 44, "type": "여권정보 등록", "content": "여권사본(OCR등록) 안내", "freq": 5, "time": 1, "diff": "하", "auto": "Y", "detail": "여권 정보 제공 안내 (문자 &amp; 유선)", "note": "- 여권정보 전달 반복지연 시  OUT콜 진행"}, {"id": 45, "type": "결제 안내", "content": "결제 (예약금)", "freq": 1, "time": 2, "diff": "하", "auto": "가능여부 검토", "detail": "예약금 결제 안내", "note": "- 예약금 결제 지연 시 OUT콜 진행, 장기간 지연 시 자동취소"}, {"id": 46, "type": "결제 안내", "content": "결제 (잔금)", "freq": 5, "time": 3, "diff": "중", "auto": "가능여부 검토", "detail": "잔금 결제 안내 (문자 &amp; 유선)", "note": "- 잔금 결제 지연 시 OUT콜 진행, 장기간 지연 시 선납금액 위약금 구분 후 취소"}, {"id": 47, "type": "발권 안내", "content": "발권", "freq": 1, "time": 1, "diff": "하", "auto": "N", "detail": "항공 발권 후 취소시 항공사 환불 수수료 안내 (선발권 안내포함)", "note": "- 잔금/중도금 문자안내 시 발권 후 취소 시 수수료발생 안내 진행중"}, {"id": 48, "type": "변경 안내", "content": "예약 변경 안내", "freq": 1, "time": 2, "diff": "중", "auto": "N", "detail": "예약 변경 안내", "note": "- 항공 및 관광일정 변경으로 인해 안내가 필요한 경우, OUT콜 진행"}, {"id": 49, "type": "변경 안내", "content": "항공스케줄 변경", "freq": 1, "time": 3, "diff": "중", "auto": "가능여부 검토", "detail": "항공 스케줄(천재지변/정비 포함)변경", "note": ""}, {"id": 50, "type": "취소 안내", "content": "취소/환불", "freq": 1, "time": 5, "diff": "상", "auto": "Y", "detail": "환불 규정 및 위약금(환불수수료) 안내", "note": "- 취소문의 접수된 고객 대상으로 OUT콜 진행 - 예약금 환급 불가로만 인지하는 고객 ↑, 이에 위약금 발생안내 시 항의↑"}, {"id": 51, "type": "해피콜 안내", "content": "준비물 및 미팅 시간 장소", "freq": 1, "time": 15, "diff": "하", "auto": "템플릿 대체", "detail": "준비물(여권소지 및 환전) 및 미팅 시간 장소 재안내 (문자 &amp; 유선)", "note": "- 인솔자 미동행 행사 대상,  평균 문자안내만 진행"}, {"id": 52, "type": "VOC  처리", "content": "사후 관리", "freq": 1, "time": 20, "diff": "상", "auto": "가능여부 검토", "detail": "고객 만족도 및 클레임 대응", "note": ""}, {"id": 53, "type": "제휴사예약", "content": "마이페이연동", "freq": 1, "time": 3, "diff": "중", "auto": "가능여부 검토", "detail": "제휴사 예약(네이버등) 당사 홈페이지 마이페이지 연동 문의(예약상태 및 여행 후기 작성 관련)", "note": "- 제휴사 예약 고객 연동 요청 불가 안내"}], "in": [{"id": 54, "type": "여행경비 관련", "content": "가이드 팁 관련 문의", "freq": 5, "time": 1, "diff": "하", "auto": "N", "detail": "인솔자 및 가이드 팁 관련 문의", "note": "- 일정표 내 상세정보-불포함내역에서만 조회 가능하여 인입콜↑"}, {"id": 55, "type": "상품관련", "content": "특전/일정/기타 문의", "freq": 5, "time": 5, "diff": "하", "auto": "가능여부 검토", "detail": "포함내역/특전내역/ 일정관련 문의", "note": "- 특전제공내역 확인인입콜 ↑"}, {"id": 56, "type": "출발확정 문의", "content": "최소 출발인원", "freq": 8, "time": 5, "diff": "중", "auto": "템플릿 대체", "detail": "최소 출발인원이 안되는 경우에 대한 고객 문의", "note": "- 대체일정안내 또는 예약금 환불안내 진행"}, {"id": 57, "type": "결제 관련", "content": "결제수단/변경, 현금영수증", "freq": 20, "time": 4, "diff": "중", "auto": "Y", "detail": "무이자할부/ 카드 결제 수단 변경,결제혼용문의, 현금영수증 문의,잔금결제 시점 문의", "note": ""}, {"id": 58, "type": "예약금 환불", "content": "환불가능 기간", "freq": 10, "time": 5, "diff": "하", "auto": "가능여부 검토", "detail": "예약 취소 후 바로 환불처리 문의 및 예약금 결제 후 언제 부터 수수료 발행하는지 문의", "note": ""}, {"id": 59, "type": "취소수수료", "content": "수수료 확인", "freq": 5, "time": 5, "diff": "중", "auto": "가능여부 검토", "detail": "예약 후 취소시 환불 수수료 관련 문의", "note": "- 예약금 환급 불가로만 인지하는 고객 ↑, 이에 위약금 발생안내 시 항의↑"}, {"id": 60, "type": "대기예약", "content": "대기예약 진행 사항", "freq": 3, "time": 7, "diff": "중", "auto": "N", "detail": "대기예약에 대한 진행 처리에 대한문의", "note": "- 대기예약 시 예약금 및 여권정보 등록 요청안내 필요"}, {"id": 61, "type": "상품/예약 변경", "content": "상품/행사 변경", "freq": 4, "time": 5, "diff": "중", "auto": "N", "detail": "예약 일정 변경 및 상품변경, 동행자 인원 변경이슈", "note": "- 일정/상품 변경 및 일행 추가 시 상품가 상이한 부분에 대한 불만↑"}, {"id": 62, "type": "호텔 관련", "content": "룸타입/호텔명 문의", "freq": 6, "time": 5, "diff": "중", "auto": "가능여부 검토", "detail": "확정 호텔 문의, 독실사용료, 3인1실 관련 문의", "note": "- 3인1실 시 상품가할인요구 및 독실사용료 추가결제에 대한 불만↑"}, {"id": 63, "type": "취소/환불", "content": "취소/환불 규정", "freq": 3, "time": 10, "diff": "중", "auto": "Y", "detail": "환불 규정 및 위약금 환불수수료 관련 문의", "note": "- 예약금 환급 불가로만 인지하는 고객 ↑, 이에 위약금 발생안내 시 항의↑"}, {"id": 64, "type": "여행준비 관련", "content": "준비 및 샌딩", "freq": 5, "time": 10, "diff": "중", "auto": "템플릿 대체", "detail": "준비물 및 환전 및 미팅 시간 장소 문의,보험문의", "note": ""}, {"id": 65, "type": "쇼핑환불", "content": "현재 구매 물품 관련", "freq": 1, "time": 10, "diff": "중", "auto": "가능여부 검토", "detail": "패키지 여행 중 쇼핑한 물품을 환불 관련문의 (지역별로 조건/답변 상이)", "note": "- 환불불가 안내 시 협박성 항의↑(ex. 소보원 접수, 커뮤니티 작성하겠다 등)"}, {"id": 66, "type": "선택관광", "content": "선택관광 문의", "freq": 10, "time": 15, "diff": "중", "auto": "가능여부 검토", "detail": "선택관광(옵션 : Option)관련 문의", "note": "- 선택관광 현지화폐 환전준비에 대한 불만↑"}, {"id": 67, "type": "경비관련", "content": "현지 여행 경비 관련", "freq": 8, "time": 10, "diff": "중", "auto": "가능여부 검토", "detail": "패키지여행 경비 관련, 환전 관련 문의, 현지 사용수단 화폐 관련", "note": ""}, {"id": 68, "type": "소아/유아 문의", "content": "소아 동반시 문의", "freq": 1, "time": 5, "diff": "하", "auto": "가능여부 검토", "detail": "소아 요금 관련문의 / 소아&amp;유아 동반관련 문의", "note": ""}, {"id": 69, "type": "인솔자", "content": "인솔자 이슈", "freq": 1, "time": 1, "diff": "하", "auto": "가능여부 검토", "detail": "인솔자 동행 미정이라고 되어있는데 몇 명부터 동행가능한건지", "note": ""}, {"id": 70, "type": "출발확정", "content": "출발확정이 되었는지?", "freq": 15, "time": 10, "diff": "중", "auto": "가능여부 검토", "detail": "최소출발인원 및 출발확정이 되었는지 문의", "note": ""}, {"id": 71, "type": "지방출발", "content": "부산/대구/기타 출발", "freq": 5, "time": 5, "diff": "하", "auto": "가능여부 검토", "detail": "보고있는 상품이 지방출발도 있는지, 가능한지 문의", "note": ""}, {"id": 72, "type": "가이드 관련", "content": "가이드지정 관련", "freq": 1, "time": 2, "diff": "하", "auto": "가능여부 검토", "detail": "특정 가이드가 지정된 상품 이용 또는 누가 지정이 되었는지 문의", "note": ""}, {"id": 73, "type": "상품관련", "content": "상품가격", "freq": 15, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "상품 및 행사별로 가격차이 문의, 예약후 해당행사 가격변동 문의, 연합상품 문의", "note": ""}, {"id": 74, "type": "예약확인", "content": "예약 단계", "freq": 5, "time": 10, "diff": "중", "auto": "가능여부 검토", "detail": "예약 후 다음 절차 문의, 예약 확인문의", "note": ""}, {"id": 75, "type": "예약관련", "content": "예약 인원, 예약 준비", "freq": 5, "time": 10, "diff": "중", "auto": "가능여부 검토", "detail": "패키지 여행 예약시, 기본적으로 필요사항, 인원 추가/감소 관련 문의", "note": ""}, {"id": 76, "type": "면세점", "content": "면세이용 관련", "freq": 1, "time": 3, "diff": "하", "auto": "가능여부 검토", "detail": "면세점 이용방법/ 항공 출발편수 문의등", "note": ""}, {"id": 77, "type": "항공관련", "content": "상품 항공권 권련", "freq": 5, "time": 10, "diff": "중", "auto": "가능여부 검토", "detail": "마일리지 예약, 좌석업그레이드, 좌석지정 및 기내식 , 수화물 , 체크인 , 이티켓 관련 문의", "note": ""}, {"id": 78, "type": "VOC  처리", "content": "사후 관리", "freq": 1, "time": 20, "diff": "상", "auto": "가능여부 검토", "detail": "고객 만족도 및 클레임 대응", "note": "- 여행 중 불만사항 발생 시 보상요청 및 감정호소형 클레임 유형 인입 시 이로 인한 업무중단 및 방해↑"}]}, "일본부문": {"out": [{"id": 79, "type": "고객예약 컨택", "content": "웹예약 또는 홈쇼핑 해피콜", "freq": 20, "time": 3, "diff": "중", "auto": "N", "detail": "예약 진행 여부 (출발일 결정), 예약인원, 구성원 확인, 일정표 재발송", "note": "포함&amp;불포함사항, 최소출발인원 등 기본 안내"}, {"id": 80, "type": "환불 문의", "content": "확정 안내", "freq": 5, "time": 5, "diff": "중", "auto": "가능여부 검토", "detail": "패키지 확정여부(최소출발인원등) 확인, 항공 및 휴양지 리조트 가능여부 재확인", "note": "출발불가시 날짜/상품변경 유도 불가시 환불안내"}, {"id": 81, "type": "규정 안내", "content": "예약 규정(여행약관 및 계약서)", "freq": 5, "time": 3, "diff": "상", "auto": "템플릿 대체", "detail": "예약확정시 진행 내역에 대한 추가(1-1, 2차) 상세 CS진행 (상품안내/취소규정/특별약관안내 등)", "note": ""}, {"id": 82, "type": "여권정보 등록", "content": "여권사본(OCR등록) 안내", "freq": 10, "time": 1, "diff": "하", "auto": "Y", "detail": "여권 정보 제공 안내 (문자 &amp; 유선)", "note": "문자발송 후 안들어온건에 대해 아웃콜 진행"}, {"id": 83, "type": "결제 안내", "content": "결제 (예약금)", "freq": 15, "time": 2, "diff": "하", "auto": "가능여부 검토", "detail": "예약금 결제 안내", "note": "문자발송 후 미입금건에 대해 아웃콜 진행 전화부재시 취소문자 발송 예약금을 출발일 기준으로 결제하고 싶어하는 고객 간혹 있음"}, {"id": 84, "type": "결제 안내", "content": "결제 (잔금)", "freq": 5, "time": 1, "diff": "하", "auto": "가능여부 검토", "detail": "잔금 결제 안내 (문자 &amp; 유선)", "note": "문자발송 후 미입금건에 대해 아웃콜진행"}, {"id": 85, "type": "발권 안내", "content": "발권", "freq": 2, "time": 1, "diff": "중", "auto": "N", "detail": "항공 발권 후 취소시 항공사 환불 수수료 안내 (선발권 안내포함)", "note": "선발권 진행 문자 발송"}, {"id": 86, "type": "변경 안내", "content": "예약 변경 안내", "freq": 1, "time": 5, "diff": "중", "auto": "N", "detail": "예약 변경 안내", "note": "출발 미정 또는 관광지 일정 변경시 아웃콜 진행"}, {"id": 87, "type": "변경 안내", "content": "항공스케줄 변경", "freq": 1, "time": 5, "diff": "상", "auto": "가능여부 검토", "detail": "항공 스케줄(천재지변/정비 포함)변경", "note": "항공결항 또는 스케줄 변경시 아웃콜 진행"}, {"id": 88, "type": "취소 안내", "content": "취소/환불", "freq": 3, "time": 4, "diff": "중", "auto": "Y", "detail": "환불 규정 및 위약금(환불수수료) 안내", "note": "취소 관련 문의글 또는 문자로 접수시 아웃콜 진행 상품가격이 아닌 예약금에서 %로 인지하는 고객들 상담시 난이도 업"}, {"id": 89, "type": "해피콜 안내", "content": "준비물 및 미팅 시간 장소", "freq": 3, "time": 3, "diff": "중", "auto": "템플릿 대체", "detail": "준비물(여권소지 및 환전) 및 미팅 시간 장소 재안내 (문자 &amp; 유선)", "note": "최종안내문자 발송/ 해피콜 가이드 진행"}, {"id": 90, "type": "VOC  처리", "content": "사후 관리", "freq": 1, "time": 15, "diff": "상", "auto": "가능여부 검토", "detail": "고객 만족도 및 클레임 대응", "note": ""}, {"id": 91, "type": "제휴사예약", "content": "마이페이연동", "freq": 1, "time": 5, "diff": "상", "auto": "가능여부 검토", "detail": "제휴사 예약(네이버등) 당사 홈페이지 마이페이지 연동 문의(예약상태 및 여행 후기 작성 관련)", "note": "가입이 여러번 되어있는 경우 서로 상담하기 어려움"}], "in": [{"id": 92, "type": "여행경비 관련", "content": "가이드 팁 관련 문의", "freq": 1, "time": 1, "diff": "하", "auto": "N", "detail": "인솔자 및 가이드 팁 관련 문의", "note": ""}, {"id": 93, "type": "상품관련", "content": "특전/일정/기타 문의", "freq": 3, "time": 2, "diff": "하", "auto": "가능여부 검토", "detail": "포함내역/특전내역/ 일정관련 문의", "note": ""}, {"id": 94, "type": "출발확정 문의", "content": "최소 출발인원", "freq": 5, "time": 3, "diff": "중", "auto": "템플릿 대체", "detail": "최소 출발인원이 안되는 경우에 대한 고객 문의", "note": ""}, {"id": 95, "type": "결제 관련", "content": "결제수단/변경, 현금영수증", "freq": 3, "time": 3, "diff": "중", "auto": "Y", "detail": "무이자할부/ 카드 결제 수단 변경,결제혼용문의, 현금영수증 문의,잔금결제 시점 문의", "note": "현금영수증 타인발행불가 항의 多 즉시할인 결제 이벤트 진행시 악용 고객 /조기마감 컴플레인 있음"}, {"id": 96, "type": "예약금 환불", "content": "환불가능 기간", "freq": 1, "time": 1, "diff": "중", "auto": "가능여부 검토", "detail": "예약 취소 후 바로 환불처리 문의 및 예약금 결제 후 언제 부터 수수료 발행하는지 문의", "note": ""}, {"id": 97, "type": "취소수수료", "content": "수수료 확인", "freq": 1, "time": 2, "diff": "중", "auto": "가능여부 검토", "detail": "예약 후 취소시 환불 수수료 관련 문의", "note": ""}, {"id": 98, "type": "대기예약", "content": "대기예약 진행 사항", "freq": 1, "time": 1, "diff": "중", "auto": "N", "detail": "대기예약에 대한 진행 처리에 대한문의", "note": ""}, {"id": 99, "type": "상품/예약 변경", "content": "상품/행사 변경", "freq": 2, "time": 2, "diff": "중", "auto": "N", "detail": "예약 일정 변경 및 상품변경, 동행자 인원 변경이슈", "note": ""}, {"id": 100, "type": "호텔 관련", "content": "룸타입/호텔명 문의", "freq": 5, "time": 2, "diff": "중", "auto": "가능여부 검토", "detail": "확정 호텔 문의, 독실사용료, 3인1실 관련 문의", "note": "3인1실 안될경우 독실 써야 되는 부분에 대해 이해 어려워 하는 분들이 많음"}, {"id": 101, "type": "취소/환불", "content": "취소/환불 규정", "freq": 2, "time": 3, "diff": "중", "auto": "Y", "detail": "환불 규정 및 위약금 환불수수료 관련 문의", "note": ""}, {"id": 102, "type": "여행준비 관련", "content": "준비 및 샌딩", "freq": 2, "time": 3, "diff": "중", "auto": "템플릿 대체", "detail": "준비물 및 환전 및 미팅 시간 장소 문의,보험문의", "note": ""}, {"id": 103, "type": "쇼핑환불", "content": "현재 구매 물품 관련", "freq": 1, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "패키지 여행 중 쇼핑한 물품을 환불 관련문의 (지역별로 조건/답변 상이)", "note": ""}, {"id": 104, "type": "선택관광", "content": "선택관광 문의", "freq": 3, "time": 5, "diff": "중", "auto": "가능여부 검토", "detail": "선택관광(옵션 : Option)관련 문의", "note": ""}, {"id": 105, "type": "경비관련", "content": "현지 여행 경비 관련", "freq": 2, "time": 2, "diff": "하", "auto": "가능여부 검토", "detail": "패키지여행 경비 관련, 환전 관련 문의, 현지 사용수단 화폐 관련", "note": ""}, {"id": 106, "type": "소아/유아 문의", "content": "소아 동반시 문의", "freq": 3, "time": 2, "diff": "중", "auto": "가능여부 검토", "detail": "소아 요금 관련문의 / 소아&amp;유아 동반관련 문의", "note": "소아/성인 요금 동일한 경우 이해 못함.  소아를 1명의 사람이라고 생각안함"}, {"id": 107, "type": "인솔자", "content": "인솔자 이슈", "freq": 3, "time": 1, "diff": "하", "auto": "가능여부 검토", "detail": "인솔자 동행 미정이라고 되어있는데 몇 명부터 동행가능한건지", "note": ""}, {"id": 108, "type": "출발확정", "content": "출발확정이 되었는지?", "freq": 5, "time": 2, "diff": "하", "auto": "가능여부 검토", "detail": "최소출발인원 및 출발확정이 되었는지 문의", "note": ""}, {"id": 109, "type": "지방출발", "content": "부산/대구/기타 출발", "freq": 3, "time": 2, "diff": "하", "auto": "가능여부 검토", "detail": "보고있는 상품이 지방출발도 있는지, 가능한지 문의", "note": ""}, {"id": 110, "type": "가이드 관련", "content": "가이드지정 관련", "freq": 1, "time": 1, "diff": "하", "auto": "가능여부 검토", "detail": "특정 가이드가 지정된 상품 이용 또는 누가 지정이 되었는지 문의", "note": ""}, {"id": 111, "type": "상품관련", "content": "상품가격", "freq": 2, "time": 2, "diff": "중", "auto": "가능여부 검토", "detail": "상품 및 행사별로 가격차이 문의, 예약후 해당행사 가격변동 문의, 연합상품 문의", "note": ""}, {"id": 112, "type": "예약확인", "content": "예약 단계", "freq": 5, "time": 3, "diff": "하", "auto": "가능여부 검토", "detail": "예약 후 다음 절차 문의, 예약 확인문의", "note": ""}, {"id": 113, "type": "예약관련", "content": "예약 인원, 예약 준비", "freq": 5, "time": 3, "diff": "하", "auto": "가능여부 검토", "detail": "패키지 여행 예약시, 기본적으로 필요사항, 인원 추가/감소 관련 문의", "note": ""}, {"id": 114, "type": "면세점", "content": "면세이용 관련", "freq": 3, "time": 1, "diff": "하", "auto": "가능여부 검토", "detail": "면세점 이용방법/ 항공 출발편수 문의등", "note": ""}, {"id": 115, "type": "항공관련", "content": "상품 항공권 권련", "freq": 5, "time": 5, "diff": "상", "auto": "가능여부 검토", "detail": "마일리지 예약, 좌석업그레이드, 좌석지정 및 기내식 , 수화물 , 체크인 , 이티켓 관련 문의", "note": "어르신들은 여행사에서 해주길 바라는 경우 많음"}, {"id": 116, "type": "VOC  처리", "content": "사후 관리", "freq": 1, "time": 20, "diff": "상", "auto": "가능여부 검토", "detail": "고객 만족도 및 클레임 대응", "note": ""}]}, "동남아부문": {"out": [{"id": 117, "type": "고객예약 컨택", "content": "웹예약 또는 홈쇼핑 해피콜", "freq": 20, "time": 5, "diff": "하", "auto": "N", "detail": "예약 진행 여부 (출발일 결정), 예약인원, 구성원 확인, 일정표 재발송", "note": "한 프로세스 웹 예약 전환시 통합으로 안내 OP  1인당"}, {"id": 118, "type": "예약진행", "content": "확정 안내", "freq": 15, "time": 2, "diff": "하", "auto": "가능여부 검토", "detail": "패키지 확정여부(최소출발인원등) 확인, 항공 및 휴양지 리조트 가능여부 재확인", "note": ""}, {"id": 119, "type": "규정 안내", "content": "예약 규정(여행약관 및 계약서)", "freq": 15, "time": 3, "diff": "중", "auto": "템플릿 대체", "detail": "예약확정시 진행 내역에 대한 추가(1-1, 2차) 상세 CS진행 (상품안내/취소규정/특별약관안내 등)", "note": ""}, {"id": 120, "type": "여권정보 등록", "content": "여권사본(OCR등록) 안내", "freq": 15, "time": 1, "diff": "하", "auto": "Y", "detail": "여권 정보 제공 안내 (문자 &amp; 유선)", "note": ""}, {"id": 121, "type": "결제 안내", "content": "결제 (예약금)", "freq": 15, "time": 1, "diff": "하", "auto": "가능여부 검토", "detail": "예약금 결제 안내", "note": ""}, {"id": 122, "type": "결제 안내", "content": "결제 (잔금)", "freq": 10, "time": 3, "diff": "하", "auto": "가능여부 검토", "detail": "잔금 결제 안내 (문자 &amp; 유선)", "note": ""}, {"id": 123, "type": "발권 안내", "content": "발권", "freq": 10, "time": 3, "diff": "중", "auto": "N", "detail": "항공 발권 후 취소시 항공사 환불 수수료 안내 (선발권 안내포함)", "note": ""}, {"id": 124, "type": "변경 안내", "content": "예약 변경 안내", "freq": 5, "time": 5, "diff": "상", "auto": "N", "detail": "예약 변경 안내", "note": ""}, {"id": 125, "type": "변경 안내", "content": "항공스케줄 변경", "freq": 3, "time": 5, "diff": "상", "auto": "가능여부 검토", "detail": "항공 스케줄(천재지변/정비 포함)변경", "note": ""}, {"id": 126, "type": "취소 안내", "content": "취소/환불", "freq": 3, "time": 5, "diff": "상", "auto": "Y", "detail": "환불 규정 및 위약금(환불수수료) 안내", "note": ""}, {"id": 127, "type": "해피콜 안내", "content": "준비물 및 미팅 시간 장소", "freq": 10, "time": 3, "diff": "하", "auto": "템플릿 대체", "detail": "준비물(여권소지 및 환전) 및 미팅 시간 장소 재안내 (문자 &amp; 유선)", "note": ""}, {"id": 128, "type": "VOC  처리", "content": "사후 관리", "freq": 1, "time": 10, "diff": "상", "auto": "가능여부 검토", "detail": "고객 만족도 및 클레임 대응", "note": ""}, {"id": 129, "type": "제휴사예약", "content": "마이페이연동", "freq": 3, "time": 3, "diff": "상", "auto": "가능여부 검토", "detail": "제휴사 예약(네이버등) 당사 홈페이지 마이페이지 연동 문의(예약상태 및 여행 후기 작성 관련)", "note": ""}], "in": [{"id": 130, "type": "여행경비 관련", "content": "가이드 팁 관련 문의", "freq": 5, "time": 2, "diff": "하", "auto": "N", "detail": "인솔자 및 가이드 팁 관련 문의", "note": ""}, {"id": 131, "type": "상품관련", "content": "특전/일정/기타 문의", "freq": 5, "time": 2, "diff": "하", "auto": "가능여부 검토", "detail": "포함내역/특전내역/ 일정관련 문의", "note": ""}, {"id": 132, "type": "출발확정 문의", "content": "최소 출발인원", "freq": 5, "time": 2, "diff": "하", "auto": "템플릿 대체", "detail": "최소 출발인원이 안되는 경우에 대한 고객 문의", "note": ""}, {"id": 133, "type": "결제 관련", "content": "결제수단/변경, 현금영수증", "freq": 5, "time": 2, "diff": "하", "auto": "Y", "detail": "무이자할부/ 카드 결제 수단 변경,결제혼용문의, 현금영수증 문의,잔금결제 시점 문의", "note": ""}, {"id": 134, "type": "예약금 환불", "content": "환불가능 기간", "freq": 5, "time": 2, "diff": "하", "auto": "가능여부 검토", "detail": "예약 취소 후 바로 환불처리 문의 및 예약금 결제 후 언제 부터 수수료 발행하는지 문의", "note": ""}, {"id": 135, "type": "취소수수료", "content": "수수료 확인", "freq": 3, "time": 3, "diff": "중", "auto": "가능여부 검토", "detail": "예약 후 취소시 환불 수수료 관련 문의", "note": ""}, {"id": 136, "type": "대기예약", "content": "대기예약 진행 사항", "freq": 1, "time": 3, "diff": "하", "auto": "N", "detail": "대기예약에 대한 진행 처리에 대한문의", "note": ""}, {"id": 137, "type": "상품/예약 변경", "content": "상품/행사 변경", "freq": 3, "time": 5, "diff": "중", "auto": "N", "detail": "예약 일정 변경 및 상품변경, 동행자 인원 변경이슈", "note": ""}, {"id": 138, "type": "호텔 관련", "content": "룸타입/호텔명 문의", "freq": 5, "time": 3, "diff": "중", "auto": "가능여부 검토", "detail": "확정 호텔 문의, 독실사용료, 3인1실 관련 문의", "note": ""}, {"id": 139, "type": "취소/환불", "content": "취소/환불 규정", "freq": 5, "time": 3, "diff": "중", "auto": "Y", "detail": "환불 규정 및 위약금 환불수수료 관련 문의", "note": ""}, {"id": 140, "type": "여행준비 관련", "content": "준비 및 샌딩", "freq": 3, "time": 3, "diff": "하", "auto": "템플릿 대체", "detail": "준비물 및 환전 및 미팅 시간 장소 문의,보험문의", "note": ""}, {"id": 141, "type": "쇼핑환불", "content": "현재 구매 물품 관련", "freq": 1, "time": 3, "diff": "중", "auto": "가능여부 검토", "detail": "패키지 여행 중 쇼핑한 물품을 환불 관련문의 (지역별로 조건/답변 상이)", "note": ""}, {"id": 142, "type": "선택관광", "content": "선택관광 문의", "freq": 5, "time": 3, "diff": "중", "auto": "가능여부 검토", "detail": "선택관광(옵션 : Option)관련 문의", "note": ""}, {"id": 143, "type": "경비관련", "content": "현지 여행 경비 관련", "freq": 5, "time": 3, "diff": "하", "auto": "가능여부 검토", "detail": "패키지여행 경비 관련, 환전 관련 문의, 현지 사용수단 화폐 관련", "note": ""}, {"id": 144, "type": "소아/유아 문의", "content": "소아 동반시 문의", "freq": 2, "time": 2, "diff": "하", "auto": "가능여부 검토", "detail": "소아 요금 관련문의 / 소아&amp;유아 동반관련 문의", "note": ""}, {"id": 145, "type": "인솔자", "content": "인솔자 이슈", "freq": 1, "time": 1, "diff": "하", "auto": "가능여부 검토", "detail": "인솔자 동행 미정이라고 되어있는데 몇 명부터 동행가능한건지", "note": ""}, {"id": 146, "type": "출발확정", "content": "출발확정이 되었는지?", "freq": 5, "time": 2, "diff": "하", "auto": "가능여부 검토", "detail": "최소출발인원 및 출발확정이 되었는지 문의", "note": ""}, {"id": 147, "type": "지방출발", "content": "부산/대구/기타 출발", "freq": 3, "time": 3, "diff": "하", "auto": "가능여부 검토", "detail": "보고있는 상품이 지방출발도 있는지, 가능한지 문의", "note": ""}, {"id": 148, "type": "가이드 관련", "content": "가이드지정 관련", "freq": 1, "time": 1, "diff": "하", "auto": "가능여부 검토", "detail": "특정 가이드가 지정된 상품 이용 또는 누가 지정이 되었는지 문의", "note": ""}, {"id": 149, "type": "상품관련", "content": "상품가격", "freq": 5, "time": 2, "diff": "하", "auto": "가능여부 검토", "detail": "상품 및 행사별로 가격차이 문의, 예약후 해당행사 가격변동 문의, 연합상품 문의", "note": ""}, {"id": 150, "type": "예약확인", "content": "예약 단계", "freq": 3, "time": 2, "diff": "하", "auto": "가능여부 검토", "detail": "예약 후 다음 절차 문의, 예약 확인문의", "note": ""}, {"id": 151, "type": "예약관련", "content": "예약 인원, 예약 준비", "freq": 3, "time": 2, "diff": "하", "auto": "가능여부 검토", "detail": "패키지 여행 예약시, 기본적으로 필요사항, 인원 추가/감소 관련 문의", "note": ""}, {"id": 152, "type": "면세점", "content": "면세이용 관련", "freq": 1, "time": 2, "diff": "하", "auto": "가능여부 검토", "detail": "면세점 이용방법/ 항공 출발편수 문의등", "note": ""}, {"id": 153, "type": "항공관련", "content": "상품 항공권 권련", "freq": 10, "time": 5, "diff": "상", "auto": "가능여부 검토", "detail": "마일리지 예약, 좌석업그레이드, 좌석지정 및 기내식 , 수화물 , 체크인 , 이티켓 관련 문의", "note": ""}, {"id": 154, "type": "VOC  처리", "content": "사후 관리", "freq": 1, "time": 20, "diff": "상", "auto": "가능여부 검토", "detail": "고객 만족도 및 클레임 대응", "note": ""}]}, "중국부문": {"out": [{"id": 155, "type": "고객예약 컨택", "content": "웹예약 또는 홈쇼핑 해피콜", "freq": 20, "time": 1, "diff": "중", "auto": "N", "detail": "예약 진행 여부 (출발일 결정), 예약인원, 구성원 확인, 일정표 재발송", "note": ""}, {"id": 156, "type": "환불 문의", "content": "확정 안내", "freq": 1, "time": 2, "diff": "하", "auto": "가능여부 검토", "detail": "패키지 확정여부(최소출발인원등) 확인, 항공 및 휴양지 리조트 가능여부 재확인", "note": ""}, {"id": 157, "type": "규정 안내", "content": "예약 규정(여행약관 및 계약서)", "freq": 1, "time": 3, "diff": "상", "auto": "템플릿 대체", "detail": "예약확정시 진행 내역에 대한 추가(1-1, 2차) 상세 CS진행 (상품안내/취소규정/특별약관안내 등)", "note": ""}, {"id": 158, "type": "여권정보 등록", "content": "여권사본(OCR등록) 안내", "freq": 1, "time": 4, "diff": "하", "auto": "Y", "detail": "여권 정보 제공 안내 (문자 &amp; 유선)", "note": "유베이스"}, {"id": 159, "type": "결제 안내", "content": "결제 (예약금)", "freq": 1, "time": 5, "diff": "중", "auto": "가능여부 검토", "detail": "예약금 결제 안내", "note": "유베이스"}, {"id": 160, "type": "결제 안내", "content": "결제 (잔금)", "freq": 1, "time": 6, "diff": "중", "auto": "가능여부 검토", "detail": "잔금 결제 안내 (문자 &amp; 유선)", "note": "유베이스"}, {"id": 161, "type": "발권 안내", "content": "발권", "freq": 3, "time": 7, "diff": "중", "auto": "N", "detail": "항공 발권 후 취소시 항공사 환불 수수료 안내 (선발권 안내포함)", "note": ""}, {"id": 162, "type": "변경 안내", "content": "예약 변경 안내", "freq": 4, "time": 8, "diff": "중", "auto": "N", "detail": "예약 변경 안내", "note": ""}, {"id": 163, "type": "변경 안내", "content": "항공스케줄 변경", "freq": 6, "time": 9, "diff": "중", "auto": "가능여부 검토", "detail": "항공 스케줄(천재지변/정비 포함)변경", "note": ""}, {"id": 164, "type": "취소 안내", "content": "취소/환불", "freq": 1, "time": 10, "diff": "중", "auto": "Y", "detail": "환불 규정 및 위약금(환불수수료) 안내", "note": ""}, {"id": 165, "type": "해피콜 안내", "content": "준비물 및 미팅 시간 장소", "freq": 8, "time": 4, "diff": "중", "auto": "템플릿 대체", "detail": "준비물(여권소지 및 환전) 및 미팅 시간 장소 재안내 (문자 &amp; 유선)", "note": "유베이스"}, {"id": 166, "type": "VOC  처리", "content": "사후 관리", "freq": 1, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "고객 만족도 및 클레임 대응", "note": ""}, {"id": 167, "type": "제휴사예약", "content": "마이페이연동", "freq": 1, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "제휴사 예약(네이버등) 당사 홈페이지 마이페이지 연동 문의(예약상태 및 여행 후기 작성 관련)", "note": ""}], "in": [{"id": 168, "type": "여행경비 관련", "content": "가이드 팁 관련 문의", "freq": 20, "time": 1, "diff": "중", "auto": "N", "detail": "인솔자 및 가이드 팁 관련 문의", "note": ""}, {"id": 169, "type": "상품관련", "content": "특전/일정/기타 문의", "freq": 1, "time": 2, "diff": "하", "auto": "가능여부 검토", "detail": "포함내역/특전내역/ 일정관련 문의", "note": ""}, {"id": 170, "type": "출발확정 문의", "content": "최소 출발인원", "freq": 1, "time": 3, "diff": "상", "auto": "템플릿 대체", "detail": "최소 출발인원이 안되는 경우에 대한 고객 문의", "note": ""}, {"id": 171, "type": "결제 관련", "content": "결제수단/변경, 현금영수증", "freq": 1, "time": 4, "diff": "하", "auto": "Y", "detail": "무이자할부/ 카드 결제 수단 변경,결제혼용문의, 현금영수증 문의,잔금결제 시점 문의", "note": ""}, {"id": 172, "type": "예약금 환불", "content": "환불가능 기간", "freq": 1, "time": 5, "diff": "중", "auto": "가능여부 검토", "detail": "예약 취소 후 바로 환불처리 문의 및 예약금 결제 후 언제 부터 수수료 발행하는지 문의", "note": ""}, {"id": 173, "type": "취소수수료", "content": "수수료 확인", "freq": 1, "time": 6, "diff": "중", "auto": "가능여부 검토", "detail": "예약 후 취소시 환불 수수료 관련 문의", "note": ""}, {"id": 174, "type": "대기예약", "content": "대기예약 진행 사항", "freq": 3, "time": 7, "diff": "중", "auto": "N", "detail": "대기예약에 대한 진행 처리에 대한문의", "note": ""}, {"id": 175, "type": "상품/예약 변경", "content": "상품/행사 변경", "freq": 4, "time": 8, "diff": "중", "auto": "N", "detail": "예약 일정 변경 및 상품변경, 동행자 인원 변경이슈", "note": ""}, {"id": 176, "type": "호텔 관련", "content": "룸타입/호텔명 문의", "freq": 6, "time": 9, "diff": "중", "auto": "가능여부 검토", "detail": "확정 호텔 문의, 독실사용료, 3인1실 관련 문의", "note": ""}, {"id": 177, "type": "취소/환불", "content": "취소/환불 규정", "freq": 1, "time": 10, "diff": "중", "auto": "Y", "detail": "환불 규정 및 위약금 환불수수료 관련 문의", "note": ""}, {"id": 178, "type": "여행준비 관련", "content": "준비 및 샌딩", "freq": 1, "time": 15, "diff": "중", "auto": "템플릿 대체", "detail": "준비물 및 환전 및 미팅 시간 장소 문의,보험문의", "note": ""}, {"id": 179, "type": "쇼핑환불", "content": "현재 구매 물품 관련", "freq": 15, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "패키지 여행 중 쇼핑한 물품을 환불 관련문의 (지역별로 조건/답변 상이)", "note": ""}, {"id": 180, "type": "선택관광", "content": "선택관광 문의", "freq": 15, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "선택관광(옵션 : Option)관련 문의", "note": ""}, {"id": 181, "type": "경비관련", "content": "현지 여행 경비 관련", "freq": 15, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "패키지여행 경비 관련, 환전 관련 문의, 현지 사용수단 화폐 관련", "note": ""}, {"id": 182, "type": "소아/유아 문의", "content": "소아 동반시 문의", "freq": 15, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "소아 요금 관련문의 / 소아&amp;유아 동반관련 문의", "note": ""}, {"id": 183, "type": "인솔자", "content": "인솔자 이슈", "freq": 15, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "인솔자 동행 미정이라고 되어있는데 몇 명부터 동행가능한건지", "note": ""}, {"id": 184, "type": "출발확정", "content": "출발확정이 되었는지?", "freq": 15, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "최소출발인원 및 출발확정이 되었는지 문의", "note": ""}, {"id": 185, "type": "지방출발", "content": "부산/대구/기타 출발", "freq": 15, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "보고있는 상품이 지방출발도 있는지, 가능한지 문의", "note": ""}, {"id": 186, "type": "가이드 관련", "content": "가이드지정 관련", "freq": 15, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "특정 가이드가 지정된 상품 이용 또는 누가 지정이 되었는지 문의", "note": ""}, {"id": 187, "type": "상품관련", "content": "상품가격", "freq": 15, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "상품 및 행사별로 가격차이 문의, 예약후 해당행사 가격변동 문의, 연합상품 문의", "note": ""}, {"id": 188, "type": "예약확인", "content": "예약 단계", "freq": 15, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "예약 후 다음 절차 문의, 예약 확인문의", "note": ""}, {"id": 189, "type": "예약관련", "content": "예약 인원, 예약 준비", "freq": 15, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "패키지 여행 예약시, 기본적으로 필요사항, 인원 추가/감소 관련 문의", "note": ""}, {"id": 190, "type": "면세점", "content": "면세이용 관련", "freq": 15, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "면세점 이용방법/ 항공 출발편수 문의등", "note": ""}, {"id": 191, "type": "항공관련", "content": "상품 항공권 권련", "freq": 15, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "마일리지 예약, 좌석업그레이드, 좌석지정 및 기내식 , 수화물 , 체크인 , 이티켓 관련 문의", "note": ""}, {"id": 192, "type": "VOC  처리", "content": "사후 관리", "freq": 15, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "고객 만족도 및 클레임 대응", "note": ""}]}, "미주남태부문": {"out": [{"id": 193, "type": "고객예약 컨택", "content": "웹예약 또는 홈쇼핑 해피콜", "freq": 20, "time": 1, "diff": "중", "auto": "N", "detail": "예약 진행 여부 (출발일 결정), 예약인원, 구성원 확인, 일정표 재발송", "note": "- 기본안내(예약금결제시한/취소규정 등) 이외의 추가문의사항 대응↑ 추가문의사항 : 룸타입(TRP/SGL), 최소출발인원, 현지조인,항공좌석 업그레이드, 좌석 지정, 선택관광, 추가경비 등"}, {"id": 194, "type": "환불 문의", "content": "확정 안내", "freq": 1, "time": 2, "diff": "하", "auto": "가능여부 검토", "detail": "패키지 확정여부(최소출발인원등) 확인, 항공 및 휴양지 리조트 가능여부 재확인", "note": "- 최소출발인원 미충족으로 인한 출발 불가 시 대체일정 1차 안내진행, 대체일정 불가 시 최종환불안내 진행 - 사전안내하였음에도 이에 대한 불만인입 시  처리난이도 ↑"}, {"id": 195, "type": "규정 안내", "content": "예약 규정(여행약관 및 계약서)", "freq": 1, "time": 3, "diff": "상", "auto": "템플릿 대체", "detail": "예약확정시 진행 내역에 대한 추가(1-1, 2차) 상세 CS진행 (상품안내/취소규정/특별약관안내 등)", "note": "- 예약 컨택 과정에서 규정안내 일괄 진행 - 출발확정이 아닌 경우, 위약금 없이 취소 가능에 대한 추가안내 진행중, 상기 내용 미안내 시 재인입 및 소비자 입장 부당하다며 부정적 반응 ↑ 선발권 진행시 중도금 요청 및 취소수수료 발생관련 안내. 미 안내시 민원 발생 ↑"}, {"id": 196, "type": "여권정보 등록", "content": "여권사본(OCR등록) 안내", "freq": 1, "time": 4, "diff": "하", "auto": "Y", "detail": "여권 정보 제공 안내 (문자 &amp; 유선)", "note": "- 여권정보 전달 반복지연 시  OUT콜 진행 - 여권정보 입력시 오류(대표자 1건 입력, 사본 미첨부 등)에 대한 인입콜 발생에 따른  OUT콜 진행"}, {"id": 197, "type": "결제 안내", "content": "결제 (예약금)", "freq": 1, "time": 5, "diff": "중", "auto": "가능여부 검토", "detail": "예약금 결제 안내", "note": "- 예약금 결제 지연시 OUT콜 진행 - 결제 시한이 지난 경우 취소 전 고객 컨택 진행 (취소여부 확인)"}, {"id": 198, "type": "결제 안내", "content": "결제 (잔금)", "freq": 1, "time": 6, "diff": "중", "auto": "가능여부 검토", "detail": "잔금 결제 안내 (문자 &amp; 유선)", "note": "- 잔금 결제 지연 시 OUT콜 진행, 장기간 지연 시 선납금액 위약금 재 안내 진행 후 취소 관련 안내"}, {"id": 199, "type": "발권 안내", "content": "발권", "freq": 3, "time": 7, "diff": "중", "auto": "N", "detail": "항공 발권 후 취소시 항공사 환불 수수료 안내 (선발권 안내포함)", "note": "- 잔금/중도금 문자안내 시 발권 후 취소 시 수수료발생 안내 진행중"}, {"id": 200, "type": "변경 안내", "content": "예약 변경 안내", "freq": 4, "time": 8, "diff": "중", "auto": "N", "detail": "예약 변경 안내", "note": "- 항공 및 관광일정 변경으로 인해 항공/현지 관련 안내가 필요한 경우, OUT콜 진행"}, {"id": 201, "type": "변경 안내", "content": "항공스케줄 변경", "freq": 6, "time": 9, "diff": "중", "auto": "가능여부 검토", "detail": "항공 스케줄(천재지변/정비 포함)변경", "note": "고객 지연 발송(항공사/자사)문자 발송 후 현지 일정관련 확인하여 OUT콜 진행"}, {"id": 202, "type": "취소 안내", "content": "취소/환불", "freq": 1, "time": 10, "diff": "중", "auto": "Y", "detail": "환불 규정 및 위약금(환불수수료) 안내", "note": "- 취소문의 접수된 고객 대상으로 OUT콜 진행 - 예약금 환급 불가로만 인지하는 고객 ↑, 이에 위약금 발생안내 시 항의↑"}, {"id": 203, "type": "해피콜 안내", "content": "준비물 및 미팅 시간 장소", "freq": 1, "time": 15, "diff": "중", "auto": "템플릿 대체", "detail": "준비물(여권소지 및 환전) 및 미팅 시간 장소 재안내 (문자 &amp; 유선)", "note": "문자로 미팅장소, 여행관련 사항 진행 -이로 인한 인입콜에 대한 부분만 응대.  경유등 설명이 필요한 상품관련만 OUT 콜 진행"}, {"id": 204, "type": "VOC  처리", "content": "사후 관리", "freq": 2, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "고객 만족도 및 클레임 대응", "note": ""}, {"id": 205, "type": "제휴사예약", "content": "마이페이연동", "freq": 2, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "제휴사 예약(네이버등) 당사 홈페이지 마이페이지 연동 문의(예약상태 및 여행 후기 작성 관련)", "note": "- 제휴사 예약 고객 연동 요청 불가 안내"}], "in": [{"id": 206, "type": "여행경비 관련", "content": "가이드 팁 관련 문의", "freq": 20, "time": 1, "diff": "중", "auto": "N", "detail": "인솔자 및 가이드 팁 관련 문의", "note": ""}, {"id": 207, "type": "상품관련", "content": "특전/일정/기타 문의", "freq": 1, "time": 2, "diff": "하", "auto": "가능여부 검토", "detail": "포함내역/특전내역/ 일정관련 문의", "note": ""}, {"id": 208, "type": "출발확정 문의", "content": "최소 출발인원", "freq": 1, "time": 3, "diff": "상", "auto": "템플릿 대체", "detail": "최소 출발인원이 안되는 경우에 대한 고객 문의", "note": ""}, {"id": 209, "type": "결제 관련", "content": "결제수단/변경, 현금영수증", "freq": 1, "time": 4, "diff": "하", "auto": "Y", "detail": "무이자할부/ 카드 결제 수단 변경,결제혼용문의, 현금영수증 문의,잔금결제 시점 문의", "note": ""}, {"id": 210, "type": "예약금 환불", "content": "환불가능 기간", "freq": 1, "time": 5, "diff": "중", "auto": "가능여부 검토", "detail": "예약 취소 후 바로 환불처리 문의 및 예약금 결제 후 언제 부터 수수료 발행하는지 문의", "note": ""}, {"id": 211, "type": "취소수수료", "content": "수수료 확인", "freq": 1, "time": 6, "diff": "중", "auto": "가능여부 검토", "detail": "예약 후 취소시 환불 수수료 관련 문의", "note": ""}, {"id": 212, "type": "대기예약", "content": "대기예약 진행 사항", "freq": 3, "time": 7, "diff": "중", "auto": "N", "detail": "대기예약에 대한 진행 처리에 대한문의", "note": ""}, {"id": 213, "type": "상품/예약 변경", "content": "상품/행사 변경", "freq": 4, "time": 8, "diff": "중", "auto": "N", "detail": "예약 일정 변경 및 상품변경, 동행자 인원 변경이슈", "note": ""}, {"id": 214, "type": "호텔 관련", "content": "룸타입/호텔명 문의", "freq": 6, "time": 9, "diff": "중", "auto": "가능여부 검토", "detail": "확정 호텔 문의, 독실사용료, 3인1실 관련 문의", "note": ""}, {"id": 215, "type": "취소/환불", "content": "취소/환불 규정", "freq": 1, "time": 10, "diff": "중", "auto": "Y", "detail": "환불 규정 및 위약금 환불수수료 관련 문의", "note": ""}, {"id": 216, "type": "여행준비 관련", "content": "준비 및 샌딩", "freq": 1, "time": 15, "diff": "중", "auto": "템플릿 대체", "detail": "준비물 및 환전 및 미팅 시간 장소 문의,보험문의", "note": ""}, {"id": 217, "type": "쇼핑환불", "content": "현재 구매 물품 관련", "freq": 15, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "패키지 여행 중 쇼핑한 물품을 환불 관련문의 (지역별로 조건/답변 상이)", "note": ""}, {"id": 218, "type": "선택관광", "content": "선택관광 문의", "freq": 15, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "선택관광(옵션 : Option)관련 문의", "note": ""}, {"id": 219, "type": "경비관련", "content": "현지 여행 경비 관련", "freq": 15, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "패키지여행 경비 관련, 환전 관련 문의, 현지 사용수단 화폐 관련", "note": ""}, {"id": 220, "type": "소아/유아 문의", "content": "소아 동반시 문의", "freq": 15, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "소아 요금 관련문의 / 소아&amp;유아 동반관련 문의", "note": ""}, {"id": 221, "type": "인솔자", "content": "인솔자 이슈", "freq": 15, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "인솔자 동행 미정이라고 되어있는데 몇 명부터 동행가능한건지", "note": ""}, {"id": 222, "type": "출발확정", "content": "출발확정이 되었는지?", "freq": 15, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "최소출발인원 및 출발확정이 되었는지 문의", "note": ""}, {"id": 223, "type": "지방출발", "content": "부산/대구/기타 출발", "freq": 15, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "보고있는 상품이 지방출발도 있는지, 가능한지 문의", "note": ""}, {"id": 224, "type": "가이드 관련", "content": "가이드지정 관련", "freq": 15, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "특정 가이드가 지정된 상품 이용 또는 누가 지정이 되었는지 문의", "note": ""}, {"id": 225, "type": "상품관련", "content": "상품가격", "freq": 15, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "상품 및 행사별로 가격차이 문의, 예약후 해당행사 가격변동 문의, 연합상품 문의", "note": ""}, {"id": 226, "type": "예약확인", "content": "예약 단계", "freq": 15, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "예약 후 다음 절차 문의, 예약 확인문의", "note": ""}, {"id": 227, "type": "예약관련", "content": "예약 인원, 예약 준비", "freq": 15, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "패키지 여행 예약시, 기본적으로 필요사항, 인원 추가/감소 관련 문의", "note": ""}, {"id": 228, "type": "면세점", "content": "면세이용 관련", "freq": 15, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "면세점 이용방법/ 항공 출발편수 문의등", "note": ""}, {"id": 229, "type": "항공관련", "content": "상품 항공권 권련", "freq": 15, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "마일리지 예약, 좌석업그레이드, 좌석지정 및 기내식 , 수화물 , 체크인 , 이티켓 관련 문의", "note": ""}, {"id": 230, "type": "VOC  처리", "content": "사후 관리", "freq": 15, "time": 20, "diff": "중", "auto": "가능여부 검토", "detail": "고객 만족도 및 클레임 대응", "note": ""}]}, "크루즈팀": {"out": [{"id": 231, "type": "고객예약 컨택", "content": "웹예약 또는 홈쇼핑 해피콜", "freq": 3, "time": 10, "diff": "중", "auto": "N", "detail": "예약 진행 여부 (출발일 결정), 예약인원, 구성원 확인, 일정표 재발송", "note": ""}, {"id": 232, "type": "환불 문의", "content": "확정 안내", "freq": 1, "time": 1, "diff": "하", "auto": "가능여부 검토", "detail": "패키지 확정여부(최소출발인원등) 확인, 항공 및 휴양지 리조트 가능여부 재확인", "note": ""}, {"id": 233, "type": "규정 안내", "content": "예약 규정(여행약관 및 계약서)", "freq": 3, "time": 10, "diff": "상", "auto": "템플릿 대체", "detail": "예약확정시 진행 내역에 대한 추가(1-1, 2차) 상세 CS진행 (상품안내/취소규정/특별약관안내 등)", "note": ""}, {"id": 234, "type": "여권정보 등록", "content": "여권사본(OCR등록) 안내", "freq": 1, "time": 1, "diff": "하", "auto": "Y", "detail": "여권 정보 제공 안내 (문자 &amp; 유선)", "note": ""}, {"id": 235, "type": "결제 안내", "content": "결제 (예약금)", "freq": 5, "time": 1, "diff": "하", "auto": "가능여부 검토", "detail": "예약금 결제 안내", "note": ""}, {"id": 236, "type": "결제 안내", "content": "결제 (잔금)", "freq": 3, "time": 10, "diff": "상", "auto": "가능여부 검토", "detail": "잔금 결제 안내 (문자 &amp; 유선)", "note": ""}, {"id": 237, "type": "발권 안내", "content": "발권", "freq": 1, "time": 1, "diff": "하", "auto": "N", "detail": "항공 발권 후 취소시 항공사 환불 수수료 안내 (선발권 안내포함)", "note": ""}, {"id": 238, "type": "변경 안내", "content": "예약 변경 안내", "freq": 1, "time": 1, "diff": "하", "auto": "N", "detail": "예약 변경 안내", "note": ""}, {"id": 239, "type": "변경 안내", "content": "항공스케줄 변경", "freq": 1, "time": 1, "diff": "하", "auto": "가능여부 검토", "detail": "항공 스케줄(천재지변/정비 포함)변경", "note": ""}, {"id": 240, "type": "취소 안내", "content": "취소/환불", "freq": 1, "time": 1, "diff": "하", "auto": "Y", "detail": "환불 규정 및 위약금(환불수수료) 안내", "note": ""}, {"id": 241, "type": "해피콜 안내", "content": "준비물 및 미팅 시간 장소", "freq": 1, "time": 1, "diff": "하", "auto": "템플릿 대체", "detail": "준비물(여권소지 및 환전) 및 미팅 시간 장소 재안내 (문자 &amp; 유선)", "note": ""}, {"id": 242, "type": "VOC  처리", "content": "사후 관리", "freq": 1, "time": 3, "diff": "하", "auto": "가능여부 검토", "detail": "고객 만족도 및 클레임 대응", "note": ""}, {"id": 243, "type": "제휴사예약", "content": "마이페이연동", "freq": 1, "time": 1, "diff": "하", "auto": "가능여부 검토", "detail": "제휴사 예약(네이버등) 당사 홈페이지 마이페이지 연동 문의(예약상태 및 여행 후기 작성 관련)", "note": ""}], "in": [{"id": 244, "type": "여행경비 관련", "content": "가이드 팁 관련 문의", "freq": 1, "time": 1, "diff": "하", "auto": "N", "detail": "인솔자 및 가이드 팁 관련 문의", "note": ""}, {"id": 245, "type": "상품관련", "content": "특전/일정/기타 문의", "freq": 2, "time": 5, "diff": "중", "auto": "가능여부 검토", "detail": "포함내역/특전내역/ 일정관련 문의", "note": ""}, {"id": 246, "type": "출발확정 문의", "content": "최소 출발인원", "freq": 1, "time": 1, "diff": "하", "auto": "템플릿 대체", "detail": "최소 출발인원이 안되는 경우에 대한 고객 문의", "note": ""}, {"id": 247, "type": "결제 관련", "content": "결제수단/변경, 현금영수증", "freq": 1, "time": 1, "diff": "하", "auto": "Y", "detail": "무이자할부/ 카드 결제 수단 변경,결제혼용문의, 현금영수증 문의,잔금결제 시점 문의", "note": ""}, {"id": 248, "type": "예약금 환불", "content": "환불가능 기간", "freq": 1, "time": 1, "diff": "하", "auto": "가능여부 검토", "detail": "예약 취소 후 바로 환불처리 문의 및 예약금 결제 후 언제 부터 수수료 발행하는지 문의", "note": ""}, {"id": 249, "type": "취소수수료", "content": "수수료 확인", "freq": 1, "time": 1, "diff": "하", "auto": "가능여부 검토", "detail": "예약 후 취소시 환불 수수료 관련 문의", "note": ""}, {"id": 250, "type": "대기예약", "content": "대기예약 진행 사항", "freq": 1, "time": 1, "diff": "하", "auto": "N", "detail": "대기예약에 대한 진행 처리에 대한문의", "note": ""}, {"id": 251, "type": "상품/예약 변경", "content": "상품/행사 변경", "freq": 1, "time": 1, "diff": "하", "auto": "N", "detail": "예약 일정 변경 및 상품변경, 동행자 인원 변경이슈", "note": ""}, {"id": 252, "type": "호텔 관련", "content": "룸타입/호텔명 문의", "freq": 1, "time": 1, "diff": "하", "auto": "가능여부 검토", "detail": "확정 호텔 문의, 독실사용료, 3인1실 관련 문의", "note": ""}, {"id": 253, "type": "취소/환불", "content": "취소/환불 규정", "freq": 1, "time": 1, "diff": "하", "auto": "Y", "detail": "환불 규정 및 위약금 환불수수료 관련 문의", "note": ""}, {"id": 254, "type": "여행준비 관련", "content": "준비 및 샌딩", "freq": 1, "time": 1, "diff": "하", "auto": "템플릿 대체", "detail": "준비물 및 환전 및 미팅 시간 장소 문의,보험문의", "note": ""}, {"id": 255, "type": "쇼핑환불", "content": "현재 구매 물품 관련", "freq": 1, "time": 1, "diff": "하", "auto": "가능여부 검토", "detail": "패키지 여행 중 쇼핑한 물품을 환불 관련문의 (지역별로 조건/답변 상이)", "note": ""}, {"id": 256, "type": "선택관광", "content": "선택관광 문의", "freq": 1, "time": 5, "diff": "중", "auto": "가능여부 검토", "detail": "선택관광(옵션 : Option)관련 문의", "note": ""}, {"id": 257, "type": "경비관련", "content": "현지 여행 경비 관련", "freq": 1, "time": 1, "diff": "하", "auto": "가능여부 검토", "detail": "패키지여행 경비 관련, 환전 관련 문의, 현지 사용수단 화폐 관련", "note": ""}, {"id": 258, "type": "소아/유아 문의", "content": "소아 동반시 문의", "freq": 1, "time": 1, "diff": "하", "auto": "가능여부 검토", "detail": "소아 요금 관련문의 / 소아&amp;유아 동반관련 문의", "note": ""}, {"id": 259, "type": "인솔자", "content": "인솔자 이슈", "freq": 1, "time": 1, "diff": "하", "auto": "가능여부 검토", "detail": "인솔자 동행 미정이라고 되어있는데 몇 명부터 동행가능한건지", "note": ""}, {"id": 260, "type": "출발확정", "content": "출발확정이 되었는지?", "freq": 1, "time": 1, "diff": "하", "auto": "가능여부 검토", "detail": "최소출발인원 및 출발확정이 되었는지 문의", "note": ""}, {"id": 261, "type": "지방출발", "content": "부산/대구/기타 출발", "freq": 1, "time": 5, "diff": "하", "auto": "가능여부 검토", "detail": "보고있는 상품이 지방출발도 있는지, 가능한지 문의", "note": ""}, {"id": 262, "type": "가이드 관련", "content": "가이드지정 관련", "freq": 1, "time": 1, "diff": "하", "auto": "가능여부 검토", "detail": "특정 가이드가 지정된 상품 이용 또는 누가 지정이 되었는지 문의", "note": ""}, {"id": 263, "type": "상품관련", "content": "상품가격", "freq": 1, "time": 1, "diff": "하", "auto": "가능여부 검토", "detail": "상품 및 행사별로 가격차이 문의, 예약후 해당행사 가격변동 문의, 연합상품 문의", "note": ""}, {"id": 264, "type": "예약확인", "content": "예약 단계", "freq": 1, "time": 1, "diff": "하", "auto": "가능여부 검토", "detail": "예약 후 다음 절차 문의, 예약 확인문의", "note": ""}, {"id": 265, "type": "예약관련", "content": "예약 인원, 예약 준비", "freq": 1, "time": 1, "diff": "하", "auto": "가능여부 검토", "detail": "패키지 여행 예약시, 기본적으로 필요사항, 인원 추가/감소 관련 문의", "note": ""}, {"id": 266, "type": "면세점", "content": "면세이용 관련", "freq": 1, "time": 1, "diff": "하", "auto": "가능여부 검토", "detail": "면세점 이용방법/ 항공 출발편수 문의등", "note": ""}, {"id": 267, "type": "항공관련", "content": "상품 항공권 권련", "freq": 2, "time": 20, "diff": "상", "auto": "가능여부 검토", "detail": "마일리지 예약, 좌석업그레이드, 좌석지정 및 기내식 , 수화물 , 체크인 , 이티켓 관련 문의", "note": "항공->크루즈 관련 으로 변경"}, {"id": 268, "type": "VOC  처리", "content": "사후 관리", "freq": 1, "time": 10, "diff": "하", "auto": "가능여부 검토", "detail": "고객 만족도 및 클레임 대응", "note": ""}]}}, "fit_detail": {"out": [{"id": 269, "type": "고객예약 컨택", "content": "웹예약 또는 채널링 유입", "freq": 15, "time": 5, "diff": "중", "auto": "N", "detail": "예약 진행 여부 , 예약 가능 여부 및 확정 안내", "note": "처리난이도 : 상 / 평균 20건 확정안내 포함시 소요시간 8분"}, {"id": 270, "type": "결제 변경", "content": "결제 수단 변경", "freq": 3, "time": 3, "diff": "중", "auto": "가능여부 검토", "detail": "결제 수단 변경으로 인한 재결제 안내", "note": ""}, {"id": 271, "type": "규정 안내", "content": "예약 규정(여행약관 및 계약서)", "freq": 1, "time": 3, "diff": "하", "auto": "템플릿 대체", "detail": "예약확정시 진행 내역에 대한 규정 CS진행 (상품안내/취소규정/특별약관안내 등)", "note": ""}, {"id": 272, "type": "여권정보 등록", "content": "여권사본(OCR등록) 안내", "freq": 2, "time": 3, "diff": "하", "auto": "Y", "detail": "여권 정보 제공 안내 (문자 &amp; 유선)", "note": ""}, {"id": 273, "type": "결제 안내", "content": "전액 결제", "freq": 9, "time": 3, "diff": "하", "auto": "가능여부 검토", "detail": "직판/네이버  전액 결제 안내 (문자 &amp; 유선)", "note": ""}, {"id": 274, "type": "변경 안내", "content": "항공스케줄 변경", "freq": 2, "time": 7, "diff": "중", "auto": "가능여부 검토", "detail": "항공 스케줄(천재지변/정비 포함)변경 및  날짜 변경 문의 처리", "note": ""}, {"id": 275, "type": "발권 안내", "content": "발권", "freq": 5, "time": 3, "diff": "중", "auto": "N", "detail": "항공 발권 후 취소시 항공사 환불 수수료 안내 (선발권 안내포함)", "note": ""}, {"id": 276, "type": "변경 안내", "content": "예약 변경 안내", "freq": 2, "time": 5, "diff": "중", "auto": "N", "detail": "예약 변경 안내", "note": ""}, {"id": 277, "type": "호텔 변경", "content": "호텔 룸타입 및 리조트 변경", "freq": 3, "time": 5, "diff": "중", "auto": "가능여부 검토", "detail": "대체 리조트 안내 및 룸타입 불가시 대체 안내 또는 고객 요청 시 안내", "note": ""}, {"id": 278, "type": "취소 안내", "content": "취소/환불", "freq": 10, "time": 5, "diff": "중", "auto": "Y", "detail": "접수 후 즉시  취소 및 확정 후 취소시 환불 규정 및 위약금(환불수수료) 안내", "note": ""}, {"id": 279, "type": "해피콜 안내", "content": "출발전 확인 사항", "freq": 1, "time": 5, "diff": "하", "auto": "템플릿 대체", "detail": "출발전 기본 안내 사항 및 유의 사항 안내  (문자 &amp; 유선)", "note": ""}, {"id": 280, "type": "VOC  처리", "content": "사후 관리", "freq": 1, "time": 15, "diff": "상", "auto": "가능여부 검토", "detail": "고객 만족도 및 클레임 접수 시  대응 처리", "note": ""}], "in": [{"id": 281, "type": "예약 확정", "content": "예약 확정 여부", "freq": 6, "time": 5, "diff": "중", "auto": "N", "detail": "접수 후 고객이 직접 예약 확정 가능 여부에 대한 인입 콜", "note": ""}, {"id": 282, "type": "상품관련", "content": "특전/일정/기타 문의", "freq": 3, "time": 3, "diff": "하", "auto": "가능여부 검토", "detail": "포함내역/특전내역/ 일정관련 문의", "note": ""}, {"id": 283, "type": "호텔 관련", "content": "룸타입 문의", "freq": 3, "time": 3, "diff": "상", "auto": "템플릿 대체", "detail": "리조트형/호텔형 별로 세부 룸타입에 대한 이용 문의", "note": ""}, {"id": 284, "type": "결제 관련", "content": "결제수단/변경, 현금영수증", "freq": 5, "time": 3, "diff": "하", "auto": "Y", "detail": "무이자할부/ 카드 결제 수단 변경,결제혼용문의, 현금영수증 문의,잔금결제 시점 문의", "note": ""}, {"id": 285, "type": "예약금 환불", "content": "환불가능 기간", "freq": 2, "time": 3, "diff": "하", "auto": "가능여부 검토", "detail": "예약 취소 후 바로 환불처리 문의 및 예약금 결제 후 언제 부터 수수료 발행하는지 문의", "note": ""}, {"id": 286, "type": "취소수수료", "content": "수수료 확인", "freq": 1, "time": 5, "diff": "중", "auto": "가능여부 검토", "detail": "예약 후 취소시 환불 수수료 관련 문의 , 환불 규정 및 위약금 환불수수료 관련 문의", "note": ""}, {"id": 287, "type": "상품/예약 변경", "content": "상품/행사 변경", "freq": 1, "time": 5, "diff": "중", "auto": "N", "detail": "예약 일정 변경 및 상품변경, 동행자 인원 변경이슈", "note": ""}, {"id": 288, "type": "호텔 관련", "content": "룸타입 및 투숙인원", "freq": 6, "time": 3, "diff": "중", "auto": "N", "detail": "독실사용료, 3인1실 및 엑스트라베드, 리조트별 풀빌라 최대 인원, 소아 동반 투숙 관련 문의", "note": ""}, {"id": 289, "type": "결항 관련", "content": "항공 지연/결항 관련", "freq": 1, "time": 7, "diff": "상", "auto": "가능여부 검토", "detail": "천재지변 및 항공사 이슈로 인한 딜레이/결항 발생 시 인입", "note": ""}, {"id": 290, "type": "여행 준비", "content": "여행 출발전 문의", "freq": 5, "time": 2, "diff": "하", "auto": "Y", "detail": "준비물 및 환전 및 , 보험관련 문의,  체크인 카운터 및 호텔 이동 방법 문의", "note": ""}, {"id": 291, "type": "소아/유아 문의", "content": "소아 동반시 문의", "freq": 3, "time": 3, "diff": "중", "auto": "템플릿 대체", "detail": "소아 요금 관련문의 / 소아&amp;유아 동반관련 문의", "note": ""}, {"id": 292, "type": "지방출발", "content": "부산/대구/기타 출발", "freq": 2, "time": 4, "diff": "하", "auto": "가능여부 검토", "detail": "보고있는 상품이 지방출발도 있는지, 가능한지 문의", "note": ""}, {"id": 293, "type": "면세점", "content": "면세이용 관련", "freq": 1, "time": 2, "diff": "하", "auto": "가능여부 검토", "detail": "면세점 이용방법/ 항공 출발편수 문의등", "note": ""}, {"id": 294, "type": "항공관련", "content": "항공 관련 문의", "freq": 8, "time": 6, "diff": "중", "auto": "가능여부 검토", "detail": "항공기종/컨티션, 좌석 업그레이드, 좌석지정 및 기내식 , 수화물 민 온라인 체크인 , 이티켓 관련 문의", "note": ""}, {"id": 295, "type": "제휴사예약", "content": "마이페이연동", "freq": 5, "time": 5, "diff": "중", "auto": "가능여부 검토", "detail": "제휴사 예약(네이버등) 당사 홈페이지 마이페이지 연동 문의(예약상태 및 여행 후기 작성 관련)", "note": ""}, {"id": 296, "type": "예약확인", "content": "예약 단계", "freq": 5, "time": 5, "diff": "하", "auto": "가능여부 검토", "detail": "예약 확정 후  이티켓/바우처  발송 관련  문의 ,  예약 내역 확인 문의", "note": ""}, {"id": 297, "type": "투어 관련", "content": "현지 투어/티켓", "freq": 3, "time": 3, "diff": "하", "auto": "가능여부 검토", "detail": "현지 일일투어 및 부가 서비스 티켓등을 구매 할 수 있는지 문의", "note": ""}, {"id": 298, "type": "가격비교", "content": "OTA 비교", "freq": 3, "time": 5, "diff": "중", "auto": "가능여부 검토", "detail": "에어텔 예약 후  시일이 지난 시점에 OTA 요금과 비교 문의", "note": ""}, {"id": 299, "type": "차량 관련", "content": "송영 서비스 포함 상품", "freq": 3, "time": 3, "diff": "중", "auto": "가능여부 검토", "detail": "셔틀 및 픽업 차량 이용 문의", "note": ""}, {"id": 300, "type": "발권 관련", "content": "항공권 발권 여부 확인 문의", "freq": 7, "time": 3, "diff": "중", "auto": "가능여부 검토", "detail": "항공권 이티켓 및 바우처 발송이 언제쯤 되는지 문의", "note": ""}, {"id": 301, "type": "공항 카운터", "content": "인천공항 체크인 카운터 문의", "freq": 2, "time": 2, "diff": "하", "auto": "가능여부 검토", "detail": "예약 상품 인천공항 체크인 카운터 문의", "note": ""}, {"id": 302, "type": "입국시 서류", "content": "국가별 입국시 서류 문의", "freq": 1, "time": 3, "diff": "하", "auto": "가능여부 검토", "detail": "입국 시 필요 서류 문의 (임산부/소아 동반 등)", "note": ""}, {"id": 303, "type": "호텔 예약", "content": "호텔 관련 문의", "freq": 8, "time": 5, "diff": "중", "auto": "가능여부 검토", "detail": "체크인/체크아웃 시간, 객실뷰, 베드타입, 조식 포함 , 호텔 전달사항 문의", "note": ""}, {"id": 304, "type": "VOC 항공", "content": "항공관련 VOC", "freq": 2, "time": 10, "diff": "상", "auto": "가능여부 검토", "detail": "연착/지연/결항 이슈 /수하물 훼손", "note": ""}, {"id": 305, "type": "VOC 호텔", "content": "호텔관련 VOC", "freq": 2, "time": 8, "diff": "상", "auto": "가능여부 검토", "detail": "호텔 직원 실수, 객실 변경, 서비스 부족 등에 인한 현지에서 바로 컴플레인 진행", "note": ""}, {"id": 306, "type": "VOC보험", "content": "보험관련VOC", "freq": 1, "time": 5, "diff": "중", "auto": "가능여부 검토", "detail": "여행자 보험 청구방법/ 여행자 보험 보상 범위 / 증권 확인 등", "note": ""}]}};
+
+// Improvement data per page
+const improveDefaults = {
+  'pkg-sum': [
+    {id:9001,icon:'🪪',name:'여권 등록',content:'OCR 제출 후 미제출 고객 자동 알림 → 반복 OUT콜 감소'},
+    {id:9002,icon:'💳',name:'결제 관련',content:'환불·재결제 자동화 논의 (분할결제 개발 검토 중)'},
+    {id:9003,icon:'🔄',name:'취소·변경',content:'지역별 안내 운영 정책 수립 → 템플릿 고지 강화 → 시스템 접수 고도화'},
+    {id:9004,icon:'📦',name:'상품 관련',content:'세부 지역별·유형별 FAQ 강화 및 쉬운 상품 설명 안내 개선'},
+    {id:9005,icon:'💬',name:'VOC',content:'사례 데이터 분석 및 유형별 스크립트 설계, 전담팀 도입 논의'},
+    {id:9006,icon:'✨',name:'기대 효과',content:'OUT/IN콜 자동화로 고객 혼선 최소화 → VOC 감소 및 OP 리소스 고부가가치 전환'},
+  ],
+  'fit-sum': [
+    {id:9101,icon:'📡',name:'IVR 개선',content:'IVR 전반적 재점검 → 타부서 연결 부담 감소 + 고객 전환 속도 개선'},
+    {id:9102,icon:'✈️',name:'항공 이티켓',content:'항공사별 이티켓 발송 템플릿 자동화'},
+    {id:9103,icon:'🏨',name:'항공·호텔 FAQ',content:'유형별 FAQ 업데이트 및 자동 발송 템플릿 강화'},
+    {id:9104,icon:'🪪',name:'여권 등록',content:'OCR 제출 후 누락 고객 알림 자동화 → 반복 OUT콜 감소'},
+    {id:9105,icon:'💳',name:'결제 관련',content:'환불·재결제 자동화 논의'},
+    {id:9106,icon:'✨',name:'기대 효과',content:'OUT/IN콜 자동화로 고객 혼선 최소화 → OP 리소스 고부가가치 업무 전환'},
+  ],
+};
+
+// mutable data store
+const store = {};
+let nextId = 10000;
+
+function initStore(pageKey, outItems, inItems, impItems) {
+  store[pageKey] = {
+    out: outItems.map(x=>({...x})),
+    in: inItems.map(x=>({...x})),
+    imp: (impItems || []).map(x=>({...x})),
+  };
+}
+
+// Init all pages
+initStore('pkg-sum', RAW.pkg_summary.out, RAW.pkg_summary.in, improveDefaults['pkg-sum']);
+initStore('fit-sum', RAW.fit_summary.out, RAW.fit_summary.in, improveDefaults['fit-sum']);
+const sectionKeys = Object.keys(RAW.sections);
+sectionKeys.forEach(k => initStore(k, RAW.sections[k].out, RAW.sections[k].in, []));
+initStore('fit-detail', RAW.fit_detail.out, RAW.fit_detail.in, []);
+
+// ── UTILS ──────────────────────────────────────────────────────────────────
+function diffBadge(d) {
+  const m = {'상':'b-h','중':'b-m','하':'b-l'};
+  return `<span class="badge ${m[d]||'b-m'}">${d||'중'}</span>`;
+}
+function autoBadge(a) {
+  const m = {'자동화 검토':'b-auto','가능여부 검토':'b-review','템플릿 대체화':'b-tmpl','운영 처리':'b-ops','템플릿 대체':'b-tmpl','Y':'b-auto','N':'b-ops'};
+  return `<span class="badge ${m[a]||'b-ops'}">${a||'-'}</span>`;
+}
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+function esc(s){return String(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+let chartInstances = {};
+function destroyCharts(prefix){
+  Object.keys(chartInstances).forEach(k=>{
+    if(k.startsWith(prefix)){chartInstances[k].destroy();delete chartInstances[k];}
+  });
+}
+
+// ── RENDER HELPERS ─────────────────────────────────────────────────────────
+function renderBars(containerId, items) {
+  const sorted=[...items].sort((a,b)=>b.freq-a.freq);
+  const mf=Math.max(...sorted.map(d=>d.freq),1), mt=Math.max(...sorted.map(d=>d.time),1);
+  return `<div class="bar-legend">
+    <span><span class="leg-dot" style="background:#2457a4"></span>발생빈도</span>
+    <span><span class="leg-dot" style="background:#c4531f"></span>소요시간</span>
+  </div>
+  <div class="bars-wrap">${sorted.map(d=>`
+    <div class="bar-row">
+      <div class="bar-lbl" title="${esc(d.type)}">${esc(d.type)}</div>
+      <div class="bar-tracks">
+        <div class="bar-track"><div class="bar-fill" style="width:${Math.round(d.freq/mf*100)}%;background:#2457a4"></div></div>
+        <div class="bar-track"><div class="bar-fill" style="width:${Math.round(d.time/mt*100)}%;background:#c4531f"></div></div>
+      </div>
+      <div class="bar-val">${d.freq}건/${d.time}분</div>
+    </div>`).join('')}
+  </div>`;
+}
+
+function renderTable(pageKey, callType, items) {
+  const sorted=[...items].sort((a,b)=>b.freq-a.freq);
+  return `<div class="tbl-wrap"><table>
+    <thead><tr><th>#</th><th>콜 유형</th><th>주요 내용</th><th>일평균</th><th>소요시간</th><th>난이도</th><th>자동화 검토</th><th>관리</th></tr></thead>
+    <tbody>${sorted.map((d,i)=>`
+      <tr>
+        <td><b style="color:#aaa">${i+1}</b></td>
+        <td><b>${esc(d.type)}</b></td>
+        <td style="color:#666">${esc(d.content)}</td>
+        <td><b>${d.freq}건</b></td>
+        <td>${d.time}분</td>
+        <td>${diffBadge(d.diff)}</td>
+        <td>${autoBadge(d.auto)}</td>
+        <td><div style="display:flex;gap:3px">
+          <button class="btn btn-ghost btn-icon" title="수정" onclick="openEdit('${pageKey}','${callType}',${d.id})">✏️</button>
+          <button class="btn btn-danger btn-icon" title="삭제" onclick="openDel('${pageKey}','${callType}',${d.id},'${esc(d.type)}')">🗑️</button>
+        </div></td>
+      </tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+function renderMetrics(pageKey) {
+  const {out, in:inArr} = store[pageKey];
+  const outTop = out.reduce((a,b)=>a.freq>b.freq?a:b, out[0]||{freq:0,type:'-'});
+  const inTop  = inArr.reduce((a,b)=>a.freq>b.freq?a:b, inArr[0]||{freq:0,type:'-'});
+  return `<div class="metrics">
+    <div class="metric-card"><div class="lbl">OUT콜 유형</div><div class="val">${out.length}</div><div class="sub">아웃바운드</div></div>
+    <div class="metric-card"><div class="lbl">OUT콜 1위</div><div class="val">${outTop.freq}건/일</div><div class="sub">${esc(outTop.type||'-')}</div></div>
+    <div class="metric-card"><div class="lbl">IN콜 유형</div><div class="val">${inArr.length}</div><div class="sub">인바운드</div></div>
+    <div class="metric-card"><div class="lbl">IN콜 1위</div><div class="val">${inTop.freq}건/일</div><div class="sub">${esc(inTop.type||'-')}</div></div>
+  </div>`;
+}
+
+function renderPieChart(canvasId, items) {
+  const counts = {};
+  items.forEach(d=>{ counts[d.auto]=(counts[d.auto]||0)+1; });
+  const labels=Object.keys(counts), values=Object.values(counts);
+  const colorMap={'자동화 검토':'#2457a4','가능여부 검토':'#c4531f','템플릿 대체화':'#1a7a4a','운영 처리':'#888','템플릿 대체':'#2a9a6a','Y':'#2457a4','N':'#888'};
+  const colors=labels.map(l=>colorMap[l]||'#aaa');
+  setTimeout(()=>{
+    const canvas=document.getElementById(canvasId);
+    if(!canvas) return;
+    if(chartInstances[canvasId]) chartInstances[canvasId].destroy();
+    chartInstances[canvasId]=new Chart(canvas,{
+      type:'doughnut',
+      data:{labels,datasets:[{data:values,backgroundColor:colors,borderWidth:0}]},
+      options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.parsed}건`}}}}
+    });
+    document.getElementById(canvasId+'-leg').innerHTML=labels.map((l,i)=>
+      `<span><span class="leg-dot" style="background:${colors[i]}"></span>${esc(l)} (${values[i]})</span>`).join('');
+  },50);
+  return `<div style="position:relative;height:160px"><canvas id="${canvasId}" role="img" aria-label="자동화 현황 차트"></canvas></div>
+    <div class="chart-leg" id="${canvasId}-leg"></div>`;
+}
+
+function renderImpList(pageKey) {
+  const imp = store[pageKey].imp;
+  if (!imp.length) return '<p style="font-size:12px;color:#aaa;padding:12px 0">등록된 개선 방안이 없습니다.</p>';
+  return `<ul class="imp-list">${imp.map(d=>`
+    <li class="imp-item">
+      <span class="imp-icon">${d.icon||'📌'}</span>
+      <span style="flex:1"><b>${esc(d.name)}</b> — ${esc(d.content)}</span>
+      <div style="display:flex;gap:3px;flex-shrink:0;margin-left:8px">
+        <button class="btn btn-ghost btn-icon" onclick="openImpEdit('${pageKey}',${d.id})">✏️</button>
+        <button class="btn btn-danger btn-icon" onclick="openDelImp('${pageKey}',${d.id},'${esc(d.name)}')">🗑️</button>
+      </div>
+    </li>`).join('')}</ul>`;
+}
+
+function renderCallSection(pageKey, hasImp) {
+  const outItems = store[pageKey].out;
+  const inItems  = store[pageKey].in;
+  return `
+    ${renderMetrics(pageKey)}
+    <div class="charts-row">
+      <div class="card card-body">
+        <div class="card-head-title" style="font-size:12px;font-weight:700;color:#666;margin-bottom:10px">OUT콜 자동화 현황</div>
+        ${renderPieChart('pie-out-'+pageKey, outItems)}
+      </div>
+      <div class="card card-body">
+        <div class="card-head-title" style="font-size:12px;font-weight:700;color:#666;margin-bottom:10px">IN콜 자동화 현황</div>
+        ${renderPieChart('pie-in-'+pageKey, inItems)}
+      </div>
+    </div>
+    <div class="card">
+      <div class="tabs">
+        <div class="tab active" id="tab-out-${pageKey}" onclick="switchCallTab('${pageKey}','out')">📤 아웃바운드</div>
+        <div class="tab" id="tab-in-${pageKey}" onclick="switchCallTab('${pageKey}','in')">📥 인바운드</div>
+      </div>
+      <div style="padding:10px 18px 8px;display:flex;justify-content:flex-end">
+        <button class="btn btn-primary" onclick="openAdd('${pageKey}')">＋ 항목 추가</button>
+      </div>
+      <div id="panel-out-${pageKey}" class="tab-panel active">
+        ${renderBars('bars-out-'+pageKey, outItems)}
+        ${renderTable(pageKey,'out',outItems)}
+      </div>
+      <div id="panel-in-${pageKey}" class="tab-panel">
+        ${renderBars('bars-in-'+pageKey, inItems)}
+        ${renderTable(pageKey,'in',inItems)}
+      </div>
+    </div>
+    ${hasImp ? `
+    <div class="sec-hd" style="margin-top:20px">
+      <span class="sec-title">개선 방안</span>
+      <button class="btn btn-ghost" onclick="openImpAdd('${pageKey}')">＋ 추가</button>
+    </div>
+    <div class="card card-body" id="imp-list-${pageKey}">${renderImpList(pageKey)}</div>` : ''}
+  `;
+}
+
+function switchCallTab(pageKey, tab) {
+  ['out','in'].forEach(t => {
+    document.getElementById(`tab-${t}-${pageKey}`).classList.toggle('active', t===tab);
+    document.getElementById(`panel-${t}-${pageKey}`).classList.toggle('active', t===tab);
+  });
+}
+
+// ── PAGES ──────────────────────────────────────────────────────────────────
+const pageConfigs = {
+  'pg-pkg-sum':      { title:'PKG 전체요약',    key:'pkg-sum',     imp:true },
+  'pg-fit-sum':      { title:'FIT 전체요약',    key:'fit-sum',     imp:true },
+  'pg-유럽부문':     { title:'PKG 유럽부문',    key:'유럽부문',     imp:false },
+  'pg-일본부문':     { title:'PKG 일본부문',    key:'일본부문',     imp:false },
+  'pg-동남아부문':   { title:'PKG 동남아부문',  key:'동남아부문',   imp:false },
+  'pg-중국부문':     { title:'PKG 중국부문',    key:'중국부문',     imp:false },
+  'pg-미주남태부문': { title:'PKG 미주남태부문',key:'미주남태부문', imp:false },
+  'pg-크루즈팀':     { title:'크루즈팀',        key:'크루즈팀',     imp:false },
+  'pg-fit-detail':   { title:'FIT 상세',        key:'fit-detail',  imp:false },
+};
+
+let currentPage = 'pg-pkg-sum';
+
+function goPage(pgId) {
+  currentPage = pgId;
+  const cfg = pageConfigs[pgId];
+  document.getElementById('topbarTitle').textContent = cfg.title;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.querySelector(`[onclick="goPage('${pgId}')"]`).classList.add('active');
+  renderPage(pgId);
+}
+
+function renderPage(pgId) {
+  const cfg = pageConfigs[pgId];
+  destroyCharts('pie-out-'+cfg.key);
+  destroyCharts('pie-in-'+cfg.key);
+  document.getElementById('mainContent').innerHTML = `
+    <div class="page-title">${cfg.title}</div>
+    <div class="page-sub">CS 상담 업무 유형 분석 — 발생빈도 · 소요시간 · 처리난이도 · 자동화 검토</div>
+    ${renderCallSection(cfg.key, cfg.imp)}
+  `;
+}
+
+// ── EDIT MODAL ─────────────────────────────────────────────────────────────
+let editTarget = null;
+
+function openAdd(pageKey) {
+  const cfg = pageConfigs[currentPage];
+  const tab = document.getElementById('tab-out-'+pageKey).classList.contains('active') ? 'out' : 'in';
+  editTarget = null;
+  document.getElementById('editTitle').textContent = '항목 추가 — '+(tab==='out'?'아웃바운드':'인바운드');
+  document.getElementById('eId').value='';
+  document.getElementById('ePageKey').value=pageKey;
+  document.getElementById('eCallType').value=tab;
+  ['eType','eContent','eDetail','eNote'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('eFreq').value='';
+  document.getElementById('eTime').value='';
+  document.getElementById('eDiff').value='중';
+  document.getElementById('eAuto').value=tab==='out'?'자동화 검토':'가능여부 검토';
+  document.getElementById('editOverlay').classList.add('open');
+}
+function openEdit(pageKey, callType, id) {
+  const arr = store[pageKey][callType];
+  const item = arr.find(d=>d.id===id);
+  if(!item) return;
+  editTarget = {pageKey, callType, id};
+  document.getElementById('editTitle').textContent='항목 수정';
+  document.getElementById('eId').value=id;
+  document.getElementById('ePageKey').value=pageKey;
+  document.getElementById('eCallType').value=callType;
+  document.getElementById('eType').value=item.type;
+  document.getElementById('eContent').value=item.content;
+  document.getElementById('eFreq').value=item.freq;
+  document.getElementById('eTime').value=item.time;
+  document.getElementById('eDiff').value=item.diff||'중';
+  document.getElementById('eAuto').value=item.auto||'가능여부 검토';
+  document.getElementById('eDetail').value=item.detail||'';
+  document.getElementById('eNote').value=item.note||'';
+  document.getElementById('editOverlay').classList.add('open');
+}
+function closeEdit(){document.getElementById('editOverlay').classList.remove('open');}
+function saveEdit(){
+  const pageKey=document.getElementById('ePageKey').value;
+  const callType=document.getElementById('eCallType').value;
+  const idVal=parseInt(document.getElementById('eId').value)||0;
+  const type=document.getElementById('eType').value.trim();
+  const content=document.getElementById('eContent').value.trim();
+  if(!type||!content){alert('콜 유형과 주요 내용은 필수입니다.');return;}
+  const item={type,content,freq:parseInt(document.getElementById('eFreq').value)||1,
+    time:parseInt(document.getElementById('eTime').value)||1,
+    diff:document.getElementById('eDiff').value,auto:document.getElementById('eAuto').value,
+    detail:document.getElementById('eDetail').value,note:document.getElementById('eNote').value};
+  if(idVal){
+    const idx=store[pageKey][callType].findIndex(d=>d.id===idVal);
+    if(idx>-1) store[pageKey][callType][idx]={...store[pageKey][callType][idx],...item};
+    toast('수정되었습니다.');
+  } else {
+    store[pageKey][callType].push({id:nextId++,...item});
+    toast('추가되었습니다.');
+  }
+  closeEdit(); renderPage(currentPage);
+}
+
+// ── IMPROVE MODAL ──────────────────────────────────────────────────────────
+function openImpAdd(pageKey){
+  document.getElementById('impTitle').textContent='개선방안 추가';
+  document.getElementById('impId').value='';
+  document.getElementById('impPageKey').value=pageKey;
+  ['impName','impContent','impIcon'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('impOverlay').classList.add('open');
+}
+function openImpEdit(pageKey,id){
+  const item=store[pageKey].imp.find(d=>d.id===id);
+  if(!item) return;
+  document.getElementById('impTitle').textContent='개선방안 수정';
+  document.getElementById('impId').value=id;
+  document.getElementById('impPageKey').value=pageKey;
+  document.getElementById('impName').value=item.name;
+  document.getElementById('impContent').value=item.content;
+  document.getElementById('impIcon').value=item.icon||'';
+  document.getElementById('impOverlay').classList.add('open');
+}
+function closeImp(){document.getElementById('impOverlay').classList.remove('open');}
+function saveImp(){
+  const pageKey=document.getElementById('impPageKey').value;
+  const idVal=parseInt(document.getElementById('impId').value)||0;
+  const name=document.getElementById('impName').value.trim();
+  const content=document.getElementById('impContent').value.trim();
+  const icon=document.getElementById('impIcon').value.trim()||'📌';
+  if(!name||!content){alert('항목명과 내용은 필수입니다.');return;}
+  if(idVal){
+    const idx=store[pageKey].imp.findIndex(d=>d.id===idVal);
+    if(idx>-1) store[pageKey].imp[idx]={...store[pageKey].imp[idx],name,content,icon};
+    toast('수정되었습니다.');
+  } else {
+    store[pageKey].imp.push({id:nextId++,icon,name,content});
+    toast('추가되었습니다.');
+  }
+  closeImp();
+  const el=document.getElementById('imp-list-'+pageKey);
+  if(el) el.innerHTML=renderImpList(pageKey);
+}
+
+// ── DELETE ─────────────────────────────────────────────────────────────────
+let delTarget=null, delType=null;
+function openDel(pageKey,callType,id,label){
+  delTarget={pageKey,callType,id}; delType='call';
+  document.getElementById('delDesc').textContent=`"${label}" 항목을 삭제하면 되돌릴 수 없습니다.`;
+  document.getElementById('delOverlay').classList.add('open');
+}
+function openDelImp(pageKey,id,label){
+  delTarget={pageKey,id}; delType='imp';
+  document.getElementById('delDesc').textContent=`"${label}" 항목을 삭제하면 되돌릴 수 없습니다.`;
+  document.getElementById('delOverlay').classList.add('open');
+}
+function closeDel(){document.getElementById('delOverlay').classList.remove('open'); delTarget=null;}
+function confirmDel(){
+  if(!delTarget) return;
+  if(delType==='call'){
+    const {pageKey,callType,id}=delTarget;
+    store[pageKey][callType]=store[pageKey][callType].filter(d=>d.id!==id);
+    closeDel(); renderPage(currentPage);
+  } else {
+    const {pageKey,id}=delTarget;
+    store[pageKey].imp=store[pageKey].imp.filter(d=>d.id!==id);
+    closeDel();
+    const el=document.getElementById('imp-list-'+pageKey);
+    if(el) el.innerHTML=renderImpList(pageKey);
+  }
+  toast('삭제되었습니다.');
+}
+
+// Close overlays on backdrop click
+['editOverlay','impOverlay','delOverlay'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',e=>{
+    if(e.target===e.currentTarget){
+      if(id==='editOverlay') closeEdit();
+      else if(id==='impOverlay') closeImp();
+      else closeDel();
+    }
+  });
+});
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+renderPage('pg-pkg-sum');
+</script>
+</body>
+</html>
